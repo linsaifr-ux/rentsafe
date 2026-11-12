@@ -458,7 +458,7 @@ LIFF 上傳 1–6 張租約照片（或 PDF）
 - [ ] LINE Developers：LINE Login 頻道，新增 LIFF app（Size: Full，Scope: profile, openid），Endpoint 填 Firebase Hosting 網址
 - [ ] Firebase：新專案，升級 Blaze，設定預算提醒
 - [ ] Google AI Studio 或 Vertex：Gemini API 金鑰（付費方案）
-- [ ] 本機：Node.js 20、Firebase CLI、Git、GitHub repo
+- [ ] 本機：Node.js 22、Firebase CLI、Git、GitHub repo
 
 ---
 
