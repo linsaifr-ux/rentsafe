@@ -23,6 +23,7 @@ import {
   LINE_LOGIN_CHANNEL_ID,
 } from "./secrets.js";
 import { firestoreUserRepo } from "./users.js";
+import { firestoreViewingRepo } from "./viewing/repo.js";
 
 initializeApp();
 setGlobalOptions({ region: REGION, maxInstances: 10 });
@@ -37,6 +38,8 @@ export const api = onRequest({ cors: false }, async (req, res) => {
         verify: (token) => verifyIdToken(token, LINE_LOGIN_CHANNEL_ID.value()),
         users: firestoreUserRepo(db),
         limiter: firestoreRateLimiter(db),
+        kb: firestoreKbIndex(db),
+        viewings: firestoreViewingRepo(db),
       },
     );
     res.status(out.status).json(out.body);

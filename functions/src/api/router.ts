@@ -3,8 +3,9 @@ import { MINUTE } from "../rateLimit.js";
 import { AuthError, bearerToken, type AuthUser } from "./auth.js";
 import { HttpError, json, type ApiDeps, type ApiRequest, type ApiResponse, type Routes } from "./http.js";
 import { meRoutes } from "./me.js";
+import { viewingRoutes } from "./viewing.js";
 
-const routes: Routes = { ...meRoutes };
+const routes: Routes = { ...meRoutes, ...viewingRoutes };
 
 /** 正規化路徑：Hosting rewrite 傳進來是 /api/xxx，直接打 function 是 /xxx */
 export function normalizePath(path: string): string {

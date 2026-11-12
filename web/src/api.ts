@@ -16,6 +16,37 @@ export interface Me {
   consentAt: string | null;
 }
 
+/** F1 看房健檢（對應 functions/src/api/viewing.ts） */
+export type ViewingAnswer = "yes" | "no" | "unknown";
+
+export interface ViewingChecklist {
+  housingTypes: Array<{ id: string; label: string; presetAnswers: Record<string, "yes" | "no">; warning: string | null }>;
+  items: Array<{ id: string; question: string; why: string; weight: number }>;
+}
+
+export interface CitationLink {
+  lawName: string;
+  articleNo: string;
+  url: string | null;
+}
+
+export interface FireRuleArticle {
+  lawName: string;
+  articleNo: string;
+  text: string;
+  sourceUrl: string;
+}
+
+export interface ViewingResult {
+  id: string;
+  score: number;
+  redFlags: Array<{ id: string; question: string; why: string; weight: number; citations: CitationLink[] }>;
+  unknown: string[];
+  questions: string[];
+  warning: string | null;
+  fireRule: { city: string | null; national: FireRuleArticle | null; local: FireRuleArticle[]; note: string | null };
+}
+
 type TokenGetter = () => string | null;
 
 /** 呼叫後端，一律帶 Authorization: Bearer <LIFF ID token> */
@@ -46,6 +77,9 @@ export const api = {
   me: () => apiFetch<Me>("/me"),
   setCity: (city: string | null) => apiFetch<{ city: string | null }>("/me/city", { method: "POST", body: { city } }),
   consent: () => apiFetch<{ ok: true }>("/me/consent", { method: "POST" }),
+  viewingChecklist: () => apiFetch<ViewingChecklist>("/viewing/checklist"),
+  submitViewing: (body: { city: string | null; housingType: string; answers: Record<string, ViewingAnswer> }) =>
+    apiFetch<ViewingResult>("/viewing", { method: "POST", body }),
 };
 
 /** 給使用者看的錯誤訊息 */

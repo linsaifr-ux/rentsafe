@@ -1,6 +1,8 @@
 import type { LineClient, LineProfile } from "../src/line/client.js";
 import type { LineMessage } from "../src/line/types.js";
 import type { UserDoc, UserRepo } from "../src/users.js";
+import type { ViewingRecord, ViewingRepo } from "../src/viewing/repo.js";
+import type { KbIndex } from "../src/ai/retrieve.js";
 
 export function fakeLine(profiles: Record<string, string> = {}) {
   const replies: Array<{ replyToken: string; messages: LineMessage[] }> = [];
@@ -63,4 +65,22 @@ export function memoryUserRepo() {
     },
   };
   return { repo, docs };
+}
+
+/** 沒有任何條文的知識庫 */
+export const emptyKbIndex: KbIndex = {
+  nearest: async () => [],
+  byArticle: async () => null,
+  byScope: async () => [],
+};
+
+export function memoryViewingRepo() {
+  const records: Array<{ uid: string; rec: ViewingRecord }> = [];
+  const repo: ViewingRepo = {
+    async add(uid, rec) {
+      records.push({ uid, rec });
+      return `v${records.length}`;
+    },
+  };
+  return { repo, records };
 }

@@ -1,0 +1,176 @@
+# F1 看房健檢清單（SPEC 7）
+#
+# 每題：
+#   id          英文代號（不可重複）
+#   question    看房時問自己的問題，回答「是／否／不確定」
+#   why         為什麼重要（給大學生看的白話說明）
+#   weight      1–3，越高越危險
+#   redFlagIf   回答 yes 或 no 時算紅燈
+#   citations   [{lawName, articleNo}]，只能引用 kb/laws 裡實際存在的條文（測試會檢查）；
+#               why 裡提到法律的地方必須有對應 citation，沒有官方條文就不要寫法律說法
+#   askLandlord 回答是紅燈或「不確定」時，要問房東的話
+#
+# 計分：安全答案得滿分、不確定得一半、紅燈 0 分，換算成 0–100。純規則，不呼叫模型。
+
+housingTypes:
+  - id: whole_floor
+    label: 整層住家
+  - id: studio
+    label: 獨立套房
+  - id: shared_suite
+    label: 分租套房
+  - id: room
+    label: 雅房
+  - id: rooftop
+    label: 頂樓加蓋
+    # 選了頂樓加蓋，「頂加或違建」那題自動視為「是」
+    presetAnswers:
+      illegal_structure: "yes"
+  - id: basement
+    label: 地下室
+    warning: 地下室通常只有一個出入口、通風差，火災或淹水時不容易逃生，看房時要特別注意逃生路線。
+
+items:
+  # ── 火災安全 ──
+  - id: smoke_alarm
+    question: 房間裡有裝住警器（住宅用火災警報器）嗎？
+    why: 住警器能在火災初期就發出警報，爭取逃生時間。消防法規定，沒有火警自動警報設備的住宅場所，管理權人應設置住宅用火災警報器並維護。
+    weight: 3
+    redFlagIf: "no"
+    citations:
+      - { lawName: 消防法, articleNo: "6" }
+    askLandlord: 房間和走道有裝住警器嗎？可以入住前裝好嗎？
+
+  - id: extinguisher
+    question: 樓層或屋內有滅火器，而且在有效期限內嗎？
+    why: 小火在一開始用滅火器就可能撲滅。過期或壓力不足的滅火器可能噴不出來。
+    weight: 2
+    redFlagIf: "no"
+    askLandlord: 滅火器放在哪裡？最近一次更換或檢查是什麼時候？
+
+  - id: second_exit
+    question: 從房間出去，有兩個不同方向的逃生路線（例如兩座樓梯）嗎？
+    why: 唯一的出口被火或煙擋住時，就沒有地方可以逃。
+    weight: 3
+    redFlagIf: "no"
+    askLandlord: 如果樓梯口起火，還有其他路可以逃生嗎？
+
+  - id: window_bars
+    question: 窗戶沒有鐵窗，或鐵窗可以從裡面打開？
+    why: 鐵窗打不開的話，火災時窗戶就不能當逃生或求救的出口。
+    weight: 3
+    redFlagIf: "no"
+    askLandlord: 鐵窗有可以從裡面打開的逃生門嗎？鑰匙放在哪裡？
+
+  - id: partition_material
+    question: 房間隔間是木板、鐵皮或其他容易燒的材質嗎？
+    why: 木板或鐵皮隔間起火時燒得快，煙也會很快擴散到其他房間。
+    weight: 3
+    redFlagIf: "yes"
+    askLandlord: 房間隔間用的是什麼材質？是磚牆還是輕隔間？
+
+  - id: wiring
+    question: 有看到電線外露、延長線串接很多台電器，或插座有焦黑痕跡嗎？
+    why: 電線老舊或用電超過負荷，是住宅火災常見的起火原因。
+    weight: 2
+    redFlagIf: "yes"
+    askLandlord: 電線最近有重新配線嗎？房間的插座可以同時用冷氣和電暖器嗎？
+
+  - id: gas_heater
+    question: 瓦斯熱水器裝在室內，或裝在被窗戶封起來的陽台嗎？
+    why: 熱水器裝在通風不良的地方，可能造成一氧化碳中毒。
+    weight: 3
+    redFlagIf: "yes"
+    askLandlord: 熱水器是瓦斯還是電熱水器？裝在哪裡？通風好不好？
+
+  # ── 建物與房東身分 ──
+  - id: illegal_structure
+    question: 這間房是頂樓加蓋或其他違建嗎？
+    why: 頂加和違建常用鐵皮、木板搭建，逃生路線少；也可能被拆除，影響你能不能繼續住。
+    weight: 3
+    redFlagIf: "yes"
+    askLandlord: 這間是合法登記的房間嗎？有沒有被通報拆除過？
+
+  - id: building_use
+    question: 房東能出示建物謄本或權狀，而且登記用途是住宅？
+    why: 用途不是住宅（例如工業用、辦公室）時，可能不符合居住安全的要求，也可能無法申請租金補貼。
+    weight: 1
+    redFlagIf: "no"
+    askLandlord: 可以給我看建物謄本或權狀嗎？登記的用途是住宅嗎？
+
+  - id: landlord_owner
+    question: 跟你簽約的人就是房屋所有權人（不是二房東）？
+    why: 如果對方是二房東，房東沒同意轉租的話，你的租約可能出問題。民法規定承租人轉租原則上要經出租人承諾（房屋可以轉租一部分，除非有反對約定）；租賃條例規定轉租人簽約時，應提供出租人同意轉租的書面文件。
+    weight: 2
+    redFlagIf: "no"
+    citations:
+      - { lawName: 民法, articleNo: "443" }
+      - { lawName: 租賃住宅市場發展及管理條例, articleNo: "9" }
+    askLandlord: 你是屋主本人嗎？如果是轉租，可以給我看屋主同意轉租的書面文件嗎？
+
+  - id: ad_match
+    question: 實際看到的房子，和廣告寫的坪數、樓層、設備一樣嗎？
+    why: 租賃條例規定，出租人提供的租賃住宅廣告內容應與事實相符。
+    weight: 1
+    redFlagIf: "no"
+    citations:
+      - { lawName: 租賃住宅市場發展及管理條例, articleNo: "13" }
+    askLandlord: 廣告上寫的坪數和設備，跟現在看到的一樣嗎？
+
+  - id: leak_mold
+    question: 天花板、牆壁有漏水、水漬或壁癌嗎？
+    why: 漏水和壁癌會影響健康，也代表需要修繕。民法規定租賃物的修繕，除契約另有訂定或另有習慣外，由出租人負擔。
+    weight: 2
+    redFlagIf: "yes"
+    citations:
+      - { lawName: 民法, articleNo: "429" }
+    askLandlord: 這些漏水痕跡是什麼時候的？入住前會修好嗎？
+
+  # ── 錢與契約 ──
+  - id: deposit
+    question: 押金在兩個月租金以內嗎？
+    why: 租賃條例規定，押金之金額不得逾二個月之租金總額。
+    weight: 2
+    redFlagIf: "no"
+    citations:
+      - { lawName: 租賃住宅市場發展及管理條例, articleNo: "7" }
+    askLandlord: 押金是幾個月？退租時什麼情況會扣押金？
+
+  - id: electricity
+    question: 電費怎麼算有講清楚（例如每度幾元、有沒有獨立電表）？
+    why: 電費每度價格和計算方式沒講清楚，入住後很容易因為電費起糾紛。
+    weight: 1
+    redFlagIf: "no"
+    askLandlord: 電費每度怎麼算？有獨立電表嗎？夏天冷氣電費大概多少？
+
+  - id: tax_burden
+    question: 房東要你負擔房屋稅、地價稅等稅金嗎？
+    why: 民法規定，就租賃物應納之一切稅捐，由出租人負擔。
+    weight: 1
+    redFlagIf: "yes"
+    citations:
+      - { lawName: 民法, articleNo: "427" }
+    askLandlord: 租金以外，還有哪些費用要我付？
+
+  - id: repair_scope
+    question: 簽約前，房東有說明哪些東西壞了由他修，並給你修繕聯絡方式嗎？
+    why: 租賃條例規定，出租人應於簽訂租賃契約前，向承租人說明由出租人負責修繕項目及範圍，並提供有修繕必要時之聯絡方式。
+    weight: 2
+    redFlagIf: "no"
+    citations:
+      - { lawName: 租賃住宅市場發展及管理條例, articleNo: "8" }
+    askLandlord: 哪些東西壞了是你負責修？要修的時候要聯絡誰？
+
+  - id: standard_contract
+    question: 房東會用內政部公告的住宅租賃定型化契約範本簽約嗎？
+    why: 用官方範本簽約，比較不容易漏掉對你重要的條款。簽約前可以用「租約健檢」幫你檢查。
+    weight: 1
+    redFlagIf: "no"
+    askLandlord: 可以用內政部的住宅租賃契約範本簽約嗎？可以先讓我帶回去看幾天嗎？
+
+  - id: subsidy_registration
+    question: 房東同意你申請租金補貼，或把戶籍遷進來嗎？
+    why: 有些房東不讓房客申請補貼或設籍。如果你打算申請租金補貼，簽約前要先確認。
+    weight: 1
+    redFlagIf: "no"
+    askLandlord: 我可以申請租金補貼或把戶籍遷進來嗎？

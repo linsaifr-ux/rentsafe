@@ -1,6 +1,8 @@
 import type { z } from "zod";
+import type { KbIndex } from "../ai/retrieve.js";
 import type { RateLimiter } from "../rateLimit.js";
 import type { UserRepo } from "../users.js";
+import type { ViewingRepo } from "../viewing/repo.js";
 import type { AuthUser } from "./auth.js";
 
 export interface ApiRequest {
@@ -19,6 +21,9 @@ export interface ApiDeps {
   verify: (idToken: string) => Promise<AuthUser>;
   users: UserRepo;
   limiter: RateLimiter;
+  /** 知識庫（看房健檢查住警器規定） */
+  kb: KbIndex;
+  viewings: ViewingRepo;
 }
 
 export interface RouteContext {

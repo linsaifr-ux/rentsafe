@@ -3,7 +3,7 @@ import { AuthError, bearerToken, verifyIdToken } from "../src/api/auth.js";
 import type { ApiDeps } from "../src/api/http.js";
 import { handleApi, normalizePath } from "../src/api/router.js";
 import { DAY, MINUTE, memoryRateLimiter, windowStart } from "../src/rateLimit.js";
-import { memoryUserRepo } from "./fakes.js";
+import { emptyKbIndex, memoryUserRepo, memoryViewingRepo } from "./fakes.js";
 
 const NOW = Date.parse("2026-11-12T03:00:00Z");
 
@@ -87,6 +87,8 @@ describe("handleApi", () => {
       },
       users: users.repo,
       limiter: memoryRateLimiter(() => NOW),
+      kb: emptyKbIndex,
+      viewings: memoryViewingRepo().repo,
     };
     const call = (method: string, path: string, body?: unknown, token: string | null = "good") =>
       handleApi({ method, path, headers: token ? { authorization: `Bearer ${token}` } : {}, body }, deps);

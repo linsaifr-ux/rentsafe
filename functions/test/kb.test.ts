@@ -221,7 +221,9 @@ describe("runIngest（實際 kb/ 資料）", () => {
     for (const no of ["423", "424", "425", "429", "430", "434", "440", "450", "453"]) expect(has("民法", no)).toBe(true);
     expect(has("消防法", "6")).toBe(true);
     expect(has("租賃住宅市場發展及管理條例", "7")).toBe(true);
-    expect(pendingLocal.length).toBe(6);
+    // 新北市已查證（2026-11-12），其餘五都待查
+    expect(pendingLocal.length).toBe(5);
+    expect(chunks.filter((c) => c.scope === "新北市").map((c) => c.articleNo)).toEqual(["5", "14"]);
   });
 
   it("dry-run 不寫入；第一次全部新增；重跑全部未變動", async () => {
