@@ -122,6 +122,13 @@ describe("answerQuestion", () => {
     expect((msg.quickReply as { items: unknown[] }).items).toHaveLength(7);
   });
 
+  it("問求償金額時即使模型想反問，也直接回答並轉介", async () => {
+    const { llm } = scriptedLlm([{ ...CLS_REPAIR, asksOutcome: true, needsClarification: "東西是怎麼燒掉的？" }, GOOD_ANSWER]);
+    const { result } = await answerQuestion({ uid: "U1", text: "可以求償多少錢", user }, deps(llm));
+    expect(result.kind).toBe("answer");
+    expect(result.kind === "answer" && result.referrals.map((r) => r.id)).toContain("legal_aid");
+  });
+
   it("問勝敗 → 附轉介（法扶）", async () => {
     const { llm } = scriptedLlm([{ ...CLS_REPAIR, asksOutcome: true }, GOOD_ANSWER]);
     const { result } = await answerQuestion({ uid: "U1", text: "告房東會贏嗎", user }, deps(llm));

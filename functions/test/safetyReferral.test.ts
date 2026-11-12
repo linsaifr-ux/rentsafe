@@ -88,8 +88,15 @@ describe("decideReferral", () => {
     expect(decideReferral({ ...base, asksOutcome: true, landlordType: "business" }).ids).toEqual(["legal_aid", "consumer"]);
   });
 
-  it("採納模型建議但忽略未知代號與 emergency", () => {
-    expect(decideReferral({ ...base, modelReferTo: ["tmm", "none", "hacker", "emergency"] }).ids).toEqual(["tmm"]);
+  it("符合轉介條件時採納模型建議，但忽略未知代號與 emergency", () => {
+    expect(decideReferral({ ...base, asksOutcome: true, modelReferTo: ["tmm", "none", "hacker", "emergency"] }).ids).toEqual([
+      "legal_aid",
+      "tmm",
+    ]);
+  });
+
+  it("不符合轉介條件時，模型建議轉介也不轉介", () => {
+    expect(decideReferral({ ...base, modelReferTo: ["tmm", "dispute_board"] })).toEqual({ refer: false, reasons: [], ids: [] });
   });
 });
 

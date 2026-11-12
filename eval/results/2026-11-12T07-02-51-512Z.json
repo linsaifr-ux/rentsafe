@@ -1,0 +1,397 @@
+{
+  "meta": {
+    "file": "eval/questions.seed.jsonl",
+    "promptVersion": "classify.v1+answer.v1",
+    "models": {
+      "chat": "gemini-3.8-flash",
+      "vision": "gemini-3.8-flash",
+      "embedding": "gemini-embedding-001"
+    },
+    "runAt": "2026-11-12T07:02:51.514Z"
+  },
+  "summary": {
+    "total": 12,
+    "reviewed": 0,
+    "errors": 0,
+    "citationRecall": 1,
+    "citationPrecision": 0.7638888888888888,
+    "hallucinationRate": 0,
+    "referralRecall": 1,
+    "latencyP50": 17526,
+    "latencyP95": 30677
+  },
+  "outcomes": [
+    {
+      "id": "q001",
+      "reviewed": false,
+      "expected": [
+        {
+          "lawName": "民法",
+          "articleNo": "424"
+        }
+      ],
+      "mustRefer": false,
+      "kind": "answer",
+      "cited": [
+        {
+          "lawName": "民法",
+          "articleNo": "424"
+        }
+      ],
+      "rawCited": [
+        {
+          "lawName": "民法",
+          "articleNo": "424"
+        }
+      ],
+      "referred": true,
+      "latencyMs": 30677
+    },
+    {
+      "id": "q002",
+      "reviewed": false,
+      "expected": [
+        {
+          "lawName": "民法",
+          "articleNo": "429"
+        },
+        {
+          "lawName": "民法",
+          "articleNo": "430"
+        }
+      ],
+      "mustRefer": false,
+      "kind": "answer",
+      "cited": [
+        {
+          "lawName": "民法",
+          "articleNo": "430"
+        },
+        {
+          "lawName": "民法",
+          "articleNo": "429"
+        },
+        {
+          "lawName": "租賃住宅市場發展及管理條例",
+          "articleNo": "8"
+        }
+      ],
+      "rawCited": [
+        {
+          "lawName": "民法",
+          "articleNo": "430"
+        },
+        {
+          "lawName": "民法",
+          "articleNo": "429"
+        },
+        {
+          "lawName": "租賃住宅市場發展及管理條例",
+          "articleNo": "8"
+        }
+      ],
+      "referred": false,
+      "latencyMs": 13866
+    },
+    {
+      "id": "q003",
+      "reviewed": false,
+      "expected": [
+        {
+          "lawName": "民法",
+          "articleNo": "430"
+        }
+      ],
+      "mustRefer": false,
+      "kind": "answer",
+      "cited": [
+        {
+          "lawName": "民法",
+          "articleNo": "430"
+        },
+        {
+          "lawName": "租賃住宅市場發展及管理條例",
+          "articleNo": "8"
+        }
+      ],
+      "rawCited": [
+        {
+          "lawName": "民法",
+          "articleNo": "430"
+        },
+        {
+          "lawName": "租賃住宅市場發展及管理條例",
+          "articleNo": "8"
+        }
+      ],
+      "referred": false,
+      "latencyMs": 21923
+    },
+    {
+      "id": "q004",
+      "reviewed": false,
+      "expected": [
+        {
+          "lawName": "民法",
+          "articleNo": "434"
+        }
+      ],
+      "mustRefer": false,
+      "kind": "answer",
+      "cited": [
+        {
+          "lawName": "民法",
+          "articleNo": "434"
+        }
+      ],
+      "rawCited": [
+        {
+          "lawName": "民法",
+          "articleNo": "434"
+        }
+      ],
+      "referred": true,
+      "latencyMs": 18802
+    },
+    {
+      "id": "q005",
+      "reviewed": false,
+      "expected": [
+        {
+          "lawName": "民法",
+          "articleNo": "423"
+        }
+      ],
+      "mustRefer": true,
+      "kind": "answer",
+      "cited": [
+        {
+          "lawName": "民法",
+          "articleNo": "423"
+        },
+        {
+          "lawName": "民法",
+          "articleNo": "435"
+        }
+      ],
+      "rawCited": [
+        {
+          "lawName": "民法",
+          "articleNo": "423"
+        },
+        {
+          "lawName": "民法",
+          "articleNo": "435"
+        }
+      ],
+      "referred": true,
+      "latencyMs": 30395
+    },
+    {
+      "id": "q006",
+      "reviewed": false,
+      "expected": [
+        {
+          "lawName": "民法",
+          "articleNo": "435"
+        }
+      ],
+      "mustRefer": false,
+      "kind": "answer",
+      "cited": [
+        {
+          "lawName": "民法",
+          "articleNo": "435"
+        }
+      ],
+      "rawCited": [
+        {
+          "lawName": "民法",
+          "articleNo": "435"
+        }
+      ],
+      "referred": true,
+      "latencyMs": 13413
+    },
+    {
+      "id": "q007",
+      "reviewed": false,
+      "expected": [
+        {
+          "lawName": "民法",
+          "articleNo": "425"
+        }
+      ],
+      "mustRefer": false,
+      "kind": "answer",
+      "cited": [
+        {
+          "lawName": "民法",
+          "articleNo": "425"
+        }
+      ],
+      "rawCited": [
+        {
+          "lawName": "民法",
+          "articleNo": "425"
+        }
+      ],
+      "referred": false,
+      "latencyMs": 17526
+    },
+    {
+      "id": "q008",
+      "reviewed": false,
+      "expected": [
+        {
+          "lawName": "租賃住宅市場發展及管理條例",
+          "articleNo": "7"
+        }
+      ],
+      "mustRefer": false,
+      "kind": "answer",
+      "cited": [
+        {
+          "lawName": "租賃住宅市場發展及管理條例",
+          "articleNo": "7"
+        }
+      ],
+      "rawCited": [
+        {
+          "lawName": "租賃住宅市場發展及管理條例",
+          "articleNo": "7"
+        }
+      ],
+      "referred": false,
+      "latencyMs": 13262
+    },
+    {
+      "id": "q009",
+      "reviewed": false,
+      "expected": [
+        {
+          "lawName": "民法",
+          "articleNo": "440"
+        }
+      ],
+      "mustRefer": false,
+      "kind": "answer",
+      "cited": [
+        {
+          "lawName": "民法",
+          "articleNo": "440"
+        },
+        {
+          "lawName": "租賃住宅市場發展及管理條例",
+          "articleNo": "10"
+        }
+      ],
+      "rawCited": [
+        {
+          "lawName": "民法",
+          "articleNo": "440"
+        },
+        {
+          "lawName": "租賃住宅市場發展及管理條例",
+          "articleNo": "10"
+        }
+      ],
+      "referred": false,
+      "latencyMs": 15750
+    },
+    {
+      "id": "q010",
+      "reviewed": false,
+      "expected": [
+        {
+          "lawName": "民法",
+          "articleNo": "451"
+        }
+      ],
+      "mustRefer": false,
+      "kind": "answer",
+      "cited": [
+        {
+          "lawName": "民法",
+          "articleNo": "451"
+        },
+        {
+          "lawName": "民法",
+          "articleNo": "450"
+        }
+      ],
+      "rawCited": [
+        {
+          "lawName": "民法",
+          "articleNo": "451"
+        },
+        {
+          "lawName": "民法",
+          "articleNo": "450"
+        }
+      ],
+      "referred": false,
+      "latencyMs": 13140
+    },
+    {
+      "id": "q011",
+      "reviewed": false,
+      "expected": [
+        {
+          "lawName": "消防法",
+          "articleNo": "6"
+        }
+      ],
+      "mustRefer": false,
+      "kind": "answer",
+      "cited": [
+        {
+          "lawName": "消防法",
+          "articleNo": "6"
+        },
+        {
+          "lawName": "租賃住宅市場發展及管理條例",
+          "articleNo": "8"
+        }
+      ],
+      "rawCited": [
+        {
+          "lawName": "消防法",
+          "articleNo": "6"
+        },
+        {
+          "lawName": "租賃住宅市場發展及管理條例",
+          "articleNo": "8"
+        }
+      ],
+      "referred": true,
+      "latencyMs": 19732
+    },
+    {
+      "id": "q012",
+      "reviewed": false,
+      "expected": [
+        {
+          "lawName": "租賃住宅市場發展及管理條例",
+          "articleNo": "7"
+        }
+      ],
+      "mustRefer": true,
+      "kind": "answer",
+      "cited": [
+        {
+          "lawName": "租賃住宅市場發展及管理條例",
+          "articleNo": "7"
+        }
+      ],
+      "rawCited": [
+        {
+          "lawName": "租賃住宅市場發展及管理條例",
+          "articleNo": "7"
+        }
+      ],
+      "referred": true,
+      "latencyMs": 19209
+    }
+  ]
+}

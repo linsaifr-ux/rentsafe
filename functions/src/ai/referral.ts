@@ -68,11 +68,12 @@ export function decideReferral(input: ReferralInput): ReferralDecision {
   }
   if (input.confidence === "low") reasons.push("low_confidence");
 
+  // 只有符合 SPEC 5.1 的轉介條件時才轉介；模型的 referTo 只用來決定「轉介給誰」，不能單獨觸發轉介
   const ids = new Set<ReferralId>();
-  for (const id of input.modelReferTo) {
-    if ((REFERRAL_IDS as readonly string[]).includes(id) && id !== "emergency") ids.add(id as ReferralId);
-  }
   if (reasons.length) {
+    for (const id of input.modelReferTo) {
+      if ((REFERRAL_IDS as readonly string[]).includes(id) && id !== "emergency") ids.add(id as ReferralId);
+    }
     ids.add("legal_aid");
     if (input.scenario === "deposit" || input.scenario === "early_termination" || input.scenario === "no_repair" || input.scenario === "leak") {
       ids.add("mediation");

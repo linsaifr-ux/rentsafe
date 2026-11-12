@@ -468,5 +468,5 @@ LIFF 上傳 1–6 張租約照片（或 PDF）
 
 - 2026-11-12｜Phase 0｜`npm run ci` 通過（lint、typecheck、7 個測試、build）；emulator 可啟動，`/api/health` 回 200｜Functions 改用 Node 22；尚未部署與設定 Secrets（等 Firebase 正式專案建好）
 - 2026-11-12｜Phase 1｜**已驗收**：部署到 rentsafe-eed02，手機加好友收到歡迎卡、選縣市寫入成功，圖文選單開 LIFF 正常（/api 無錯誤紀錄）｜webhook 簽章、follow 歡迎卡＋縣市 Quick Reply、unfollow、圖文選單、LIFF 登入＋ID token 驗證、/api/me、每分鐘限流。注意：LINE Login 頻道須 Publish，否則非管理員帳號開 LIFF 會 400；Storage 尚未開通，存證廊（Phase 6）前要在 Console 啟用
-- 2026-11-12｜Phase 2｜官方條文已下載入 `kb/laws/`（民法 421–463-1 共 51 條、租賃條例 48 條、消防法 6、鄉鎮市調解條例 37 條，資料日期 2026-10-30）；ingest 在 emulator 以假嵌入驗證，**尚未驗收**（需 Gemini 金鑰正式嵌入、六都住警器條文待查證）｜pcode 由官方資料比對取得
-- 2026-11-12｜Phase 3｜流程與 citeCheck 完成（citeCheck 27 個測試），**尚未驗收**（需 Gemini 金鑰跑 `npm run eval`，目標引用正確率 ≥ 80%）｜citeCheck 另外檢查國字條號（第四百二十四條），避免繞過規則 3
+- 2026-11-12｜Phase 2｜**部分驗收**：137 條已匯入 rentsafe-eed02（重跑顯示全部未變動），向量檢索正常｜**未完成**：六都住警器摘錄（kb/local 六個檔案仍為「待查」，需從市府官方法規逐字複製）
+- 2026-11-12｜Phase 3｜**已驗收（初版）**：eval 12 題引用正確率 100%、精確率 76.4%、幻覺率 0%、轉介正確率 100%，延遲 P50 17.5 秒／P95 30.7 秒（`eval/results/2026-11-12T07-02-51-512Z.md`）｜驗收時修正：模型的 referTo 不能單獨觸發轉介（原本 12 題全被轉介）；問勝敗／求償時不反問、直接轉介。citeCheck 另外檢查國字條號。題庫尚未經人工複核（reviewedBy 皆為 null）

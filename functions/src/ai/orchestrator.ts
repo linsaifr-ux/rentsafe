@@ -104,7 +104,8 @@ export async function answerQuestion(
 
   // 3. 分類
   const cls = await classify(deps.llm, question, input.user.city);
-  if (cls.needsClarification) {
+  // 問勝敗或求償金額時不反問，直接回答一般規定並轉介（SPEC 開頭「個案判斷一律改為轉介」）
+  if (cls.needsClarification && !cls.asksOutcome) {
     const askCity = /縣市|哪個城市|哪裡租|住在哪/.test(cls.needsClarification);
     await log({ outcome: "clarify", answer: cls.needsClarification, citations: [], referred: false, scenario: cls.scenario, citeCheck: null });
     return { result: { kind: "clarify", question: cls.needsClarification, askCity }, trace: null };
