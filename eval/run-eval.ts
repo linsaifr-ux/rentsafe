@@ -16,7 +16,7 @@ import { geminiLlm } from "../functions/src/ai/llm.js";
 import { memoryKbIndex } from "../functions/src/ai/memoryIndex.js";
 import { answerQuestion, PROMPT_VERSION } from "../functions/src/ai/orchestrator.js";
 import { normalizeCity } from "../functions/src/cities.js";
-import { MODELS } from "../functions/src/config.js";
+import { LLM, MODELS } from "../functions/src/config.js";
 import { kbKeySet, parseJsonl, summarize, type QuestionOutcome } from "../functions/src/eval/metrics.js";
 import { loadKb } from "../functions/src/kb/load.js";
 import { memoryRateLimiter } from "../functions/src/rateLimit.js";
@@ -30,9 +30,10 @@ async function main(): Promise<void> {
   const questions = parseJsonl(await readFile(new URL(file, `file://${ROOT}`), "utf8"));
 
   const { chunks } = await loadKb();
-  const embedder = geminiEmbedder(key);
+  const retry = { retries: LLM.rateLimitRetries, onWait: (ms: number) => console.log(`Gemini 限流，等待 ${Math.round(ms / 1000)} 秒後重試…`) };
+  const embedder = geminiEmbedder(key, retry);
   const index = await memoryKbIndex(chunks, embedder);
-  const llm = geminiLlm(key);
+  const llm = geminiLlm(key, MODELS.chat, retry);
   const kbKeys = kbKeySet(chunks);
 
   const outcomes: QuestionOutcome[] = [];

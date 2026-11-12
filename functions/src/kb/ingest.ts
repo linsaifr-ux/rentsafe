@@ -15,6 +15,7 @@ import { fileURLToPath } from "node:url";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { fakeEmbedder, geminiEmbedder, type Embedder } from "../ai/embed.js";
+import { LLM } from "../config.js";
 import { diffChunks, embedText, formatReport, type ChangeReport } from "./chunks.js";
 import { loadKb } from "./load.js";
 import { firestoreKbStore, type KbStore } from "./store.js";
@@ -69,7 +70,7 @@ async function main(): Promise<void> {
     else {
       const key = process.env.GEMINI_API_KEY;
       if (!key) throw new Error("請設定 GEMINI_API_KEY 環境變數");
-      embedder = geminiEmbedder(key);
+      embedder = geminiEmbedder(key, { retries: LLM.rateLimitRetries, onWait: (ms) => console.log(`Gemini 限流，等待 ${Math.round(ms / 1000)} 秒後重試…`) });
     }
   }
 

@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import { type RetryOptions, withRateLimitRetry } from "./embed.js";
 import type { z } from "zod";
 import { LLM, MODELS } from "../config.js";
 
@@ -55,19 +56,23 @@ export async function generateJson<T>(
   throw new LlmJsonError("LLM JSON 驗證失敗", attempts);
 }
 
-export function geminiLlm(apiKey: string, model: string = MODELS.chat): Llm {
+export function geminiLlm(apiKey: string, model: string = MODELS.chat, opts: RetryOptions = {}): Llm {
   const ai = new GoogleGenAI({ apiKey });
   return {
     async generate({ system, user, temperature }) {
-      const res = await ai.models.generateContent({
-        model,
-        contents: user,
-        config: {
-          systemInstruction: system,
-          responseMimeType: "application/json",
-          temperature: temperature ?? LLM.temperature,
-        },
-      });
+      const res = await withRateLimitRetry(
+        () =>
+          ai.models.generateContent({
+            model,
+            contents: user,
+            config: {
+              systemInstruction: system,
+              responseMimeType: "application/json",
+              temperature: temperature ?? LLM.temperature,
+            },
+          }),
+        { retries: opts.retries ?? 0, onWait: opts.onWait },
+      );
       const text = res.text;
       if (!text) throw new Error("模型沒有回傳內容");
       return text;

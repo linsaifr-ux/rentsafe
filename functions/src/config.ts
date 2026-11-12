@@ -33,6 +33,10 @@ export const LLM = {
   /** JSON zod 驗證失敗時的重試次數 */
   jsonRetries: 1,
   temperature: 0.2,
+  /** 被 Gemini 限流（429）時最多重試幾次（只用於 ingest、eval 等命令列工具；線上回覆不等待） */
+  rateLimitRetries: 3,
+  /** 429 回應沒有附等待秒數時的預設等待（毫秒） */
+  rateLimitDefaultWaitMs: 30_000,
 } as const;
 
 /** 限流（SPEC 4.1、4.2） */
