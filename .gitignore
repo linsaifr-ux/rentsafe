@@ -16,3 +16,5 @@ ui-debug.log*
 coverage/
 !functions/.env.demo-rentsafe
 functions/kb-data/
+!functions/.env.rentsafe-eed02
+!web/.env.production
