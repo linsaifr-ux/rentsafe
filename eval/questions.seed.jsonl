@@ -1,0 +1,12 @@
+{"id":"q001","question":"我簽約時房東就說是隔間違建，現在覺得很危險，還可以提前解約嗎？","city":"新北市","expectedArticles":[{"lawName":"民法","articleNo":"424"}],"mustRefer":false,"notes":"重點：訂約時已知瑕疵仍可終止","reviewedBy":null}
+{"id":"q002","question":"天花板漏水跟房東講了兩次都不修，我可以怎麼辦？","city":"臺北市","expectedArticles":[{"lawName":"民法","articleNo":"429"},{"lawName":"民法","articleNo":"430"}],"mustRefer":false,"notes":"催告期限、終止或自行修繕後求償或扣租","reviewedBy":null}
+{"id":"q003","question":"我自己修好壞掉的熱水器，可以從房租扣掉修理費嗎？","city":"臺中市","expectedArticles":[{"lawName":"民法","articleNo":"430"}],"mustRefer":false,"notes":"須先定相當期限催告","reviewedBy":null}
+{"id":"q004","question":"我煮飯不小心讓租屋處失火，房東要我全部賠償，我一定要賠嗎？","city":"高雄市","expectedArticles":[{"lawName":"民法","articleNo":"434"}],"mustRefer":false,"notes":"僅重大過失才負責","reviewedBy":null}
+{"id":"q005","question":"租屋處火災，我的東西燒光了，可以跟房東求償多少錢？","city":"新北市","expectedArticles":[{"lawName":"民法","articleNo":"423"}],"mustRefer":true,"notes":"問求償金額，必須轉介，不得估算","reviewedBy":null}
+{"id":"q006","question":"火災燒掉一部分房間，我還要付全額房租嗎？","city":"臺南市","expectedArticles":[{"lawName":"民法","articleNo":"435"}],"mustRefer":false,"notes":"一部滅失得請求減租","reviewedBy":null}
+{"id":"q007","question":"房東把房子賣掉了，新屋主叫我下個月搬走，我一定要搬嗎？","city":"桃園市","expectedArticles":[{"lawName":"民法","articleNo":"425"}],"mustRefer":false,"notes":"買賣不破租賃","reviewedBy":null}
+{"id":"q008","question":"房東要收三個月押金，這樣合法嗎？","city":"臺北市","expectedArticles":[{"lawName":"租賃住宅市場發展及管理條例","articleNo":"7"}],"mustRefer":false,"notes":"押金不得逾二個月租金總額","reviewedBy":null}
+{"id":"q009","question":"我這個月房租晚繳，房東說要立刻終止租約叫我搬走，可以這樣嗎？","city":"臺中市","expectedArticles":[{"lawName":"民法","articleNo":"440"}],"mustRefer":false,"notes":"欠租達一定程度並經催告","reviewedBy":null}
+{"id":"q010","question":"租約上個月到期，房東沒說什麼我就繼續住、繼續繳房租，現在算什麼狀態？","city":"高雄市","expectedArticles":[{"lawName":"民法","articleNo":"451"}],"mustRefer":false,"notes":"視為不定期租賃","reviewedBy":null}
+{"id":"q011","question":"我租的分租套房沒有住警器，房東有義務裝嗎？","city":"新北市","expectedArticles":[{"lawName":"消防法","articleNo":"6"}],"mustRefer":false,"notes":"須同時說明新北市自治條例（scope=新北市 的 chunk）","reviewedBy":null}
+{"id":"q012","question":"房東說要我寫切結書放棄押金，不然不租給我，這樣有效嗎？","city":"臺北市","expectedArticles":[{"lawName":"租賃住宅市場發展及管理條例","articleNo":"7"}],"mustRefer":true,"notes":"涉及定型化契約不得記載事項，建議轉介確認","reviewedBy":null}

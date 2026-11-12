@@ -1,0 +1,50 @@
+# 轉介名單（SPEC 11）
+# 每筆附來源與查證日期。checkedAt 為「待查證」的項目，上線前需由團隊成員打電話或查官網確認。
+- id: legal_aid
+  name: 法扶基金會 住宅租賃糾紛諮詢專線
+  contact: 市話撥 412-8518（手機請加 02），撥通後按 2 再按 6
+  hours: 週一至週五 9:00–12:30、13:30–17:00
+  note: 免費，律師諮詢
+  url: https://www.laf.org.tw/
+  source: SPEC 11（團隊整理）
+  checkedAt: 待查證
+- id: tmm
+  name: 崔媽媽基金會
+  contact: 網路搜尋「崔媽媽好搬法」預約；電話 02-2365-8140
+  hours: null
+  note: 預約後約 5 個工作天回電
+  url: https://www.tmm.org.tw/
+  source: SPEC 11（團隊整理）
+  checkedAt: 待查證
+- id: mediation
+  name: 戶籍地或租屋地區公所調解委員會
+  contact: 各區公所
+  hours: null
+  note: 免費；調解成立經法院核定後有執行力
+  url: null
+  source: SPEC 11（團隊整理）；鄉鎮市調解條例
+  checkedAt: 待查證
+- id: dispute_board
+  name: 縣市不動產糾紛調處委員會
+  contact: 各縣市地政局
+  hours: null
+  note: 住宅租賃爭議可申請調處
+  url: null
+  source: SPEC 11（團隊整理）
+  checkedAt: 待查證
+- id: consumer
+  name: 消費者服務專線 1950
+  contact: "1950"
+  hours: null
+  note: 房東為業者（包租代管、二房東業者）時適用
+  url: null
+  source: SPEC 11（團隊整理）
+  checkedAt: 待查證
+- id: emergency
+  name: 緊急求助 119／110
+  contact: 火災、受傷撥 119；人身安全撥 110
+  hours: 24 小時
+  note: 緊急狀況
+  url: null
+  source: SPEC 11
+  checkedAt: 待查證

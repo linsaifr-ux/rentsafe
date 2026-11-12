@@ -1,0 +1,34 @@
+{
+  "name": "zuanxin",
+  "private": true,
+  "description": "租安心：在 LINE 裡使用的 AI 租屋法律小幫手",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "workspaces": [
+    "functions",
+    "web"
+  ],
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "npm run typecheck --workspaces",
+    "test": "npm run test --workspaces",
+    "build": "npm run build --workspaces",
+    "ci": "npm run lint && npm run typecheck && npm test && npm run build",
+    "emulators": "npm run build -w functions && firebase emulators:start --project demo-zuanxin",
+    "deploy": "npm run build && firebase deploy",
+    "kb:ingest": "npm run kb:ingest -w functions --",
+    "kb:fetch": "npm run kb:fetch -w functions",
+    "eval": "tsx eval/run-eval.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.14.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "firebase-tools": "^15.35.0",
+    "globals": "^17.14.0",
+    "typescript": "~6.0.0",
+    "typescript-eslint": "^8.72.2"
+  },
+  "type": "module"
+}
