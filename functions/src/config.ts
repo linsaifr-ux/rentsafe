@@ -40,6 +40,16 @@ export const LLM = {
 } as const;
 
 /** 限流（SPEC 4.1、4.2） */
+/** 看房健檢（SPEC 7） */
+export const VIEWING = {
+  /** 租屋處名稱或地址最多幾個字 */
+  labelMaxLength: 60,
+  /** 「我的看房紀錄」最多列出幾筆 */
+  historyLimit: 50,
+  /** 一次最多比較幾間 */
+  compareMax: 3,
+} as const;
+
 export const RATE_LIMITS = {
   perUserPerMinute: 10,
   qaPerUserPerDay: 50,

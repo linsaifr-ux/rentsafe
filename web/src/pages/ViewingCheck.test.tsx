@@ -21,6 +21,11 @@ const checklist: ViewingChecklist = {
 
 const result: ViewingResult = {
   id: "v1",
+  label: "公館套房",
+  city: "新北市",
+  housingType: "rooftop",
+  createdAt: null,
+  answers: { smoke_alarm: "no", illegal_structure: "yes" },
   score: 25,
   redFlags: [
     {
@@ -66,18 +71,20 @@ describe("ViewingCheck", () => {
   it("送出後顯示分數、紅燈出處、當地住警器規定、問房東的問題與免責聲明", async () => {
     const c = client();
     render(<ViewingCheck me={me} onMeChange={() => {}} client={c} />);
-    fireEvent.click(await screen.findByRole("button", { name: "頂樓加蓋" }));
+    fireEvent.change(await screen.findByLabelText("這間的名稱或地址（選填）"), { target: { value: " 公館套房 " } });
+    fireEvent.click(screen.getByRole("button", { name: "頂樓加蓋" }));
     const group = screen.getByRole("radiogroup", { name: "房間裡有裝住警器嗎？" });
     fireEvent.click(within(group).getByRole("radio", { name: "否" }));
     fireEvent.click(screen.getByRole("button", { name: "看結果" }));
 
     expect((await screen.findByTestId("viewing-score")).textContent).toBe("25");
-    expect(c.submitViewing).toHaveBeenCalledWith({ city: "新北市", housingType: "rooftop", answers: { smoke_alarm: "no" } });
+    expect(c.submitViewing).toHaveBeenCalledWith({ label: "公館套房", city: "新北市", housingType: "rooftop", answers: { smoke_alarm: "no" } });
     expect(screen.getByRole("link", { name: "消防法第 6 條" }).getAttribute("href")).toBe("https://law.moj.gov.tw/x");
     expect(screen.getByText("新北市火災預防自治條例 第 5 條")).toBeTruthy();
     expect(screen.getByText("房間有裝住警器嗎？")).toBeTruthy();
     expect(screen.getByRole("button", { name: "複製問題" })).toBeTruthy();
     expect(screen.getByText(DISCLAIMER_TEXT)).toBeTruthy();
+    expect(screen.getAllByRole("link", { name: "我的看房紀錄" })[0]!.getAttribute("href")).toBe("/viewings");
   });
 
   it("載入清單失敗顯示錯誤", async () => {

@@ -11,6 +11,7 @@ const ANSWER_LABEL: Record<ViewingAnswer, string> = { yes: "是", no: "否", unk
 /** F1 看房健檢（SPEC 7）：勾選清單 → 安全分數、紅燈、住警器規定、要問房東的問題 */
 export function ViewingCheck({ me, client = api }: PageProps & { client?: Client }) {
   const [checklist, setChecklist] = useState<ViewingChecklist | null>(null);
+  const [label, setLabel] = useState("");
   const [city, setCity] = useState<string>(me.city ?? "");
   const [housingType, setHousingType] = useState<string>("");
   const [answers, setAnswers] = useState<Record<string, ViewingAnswer>>({});
@@ -34,7 +35,7 @@ export function ViewingCheck({ me, client = api }: PageProps & { client?: Client
     setSubmitting(true);
     setError(null);
     try {
-      setResult(await client.submitViewing({ city: city || null, housingType, answers }));
+      setResult(await client.submitViewing({ ...(label.trim() ? { label: label.trim() } : {}), city: city || null, housingType, answers }));
       window.scrollTo?.(0, 0);
     } catch (err) {
       setError(errorMessage(err));
@@ -47,6 +48,22 @@ export function ViewingCheck({ me, client = api }: PageProps & { client?: Client
     <section>
       <h1 className="text-xl font-bold text-gray-900">看房健檢</h1>
       <p className="mt-1 text-sm text-gray-600">看房時邊看邊勾，最後會告訴你哪裡有紅燈、要問房東什麼。</p>
+      <a href="/viewings" className="mt-2 inline-block text-sm text-emerald-700 underline">
+        我的看房紀錄
+      </a>
+
+      <label className="mt-4 block text-sm font-medium text-gray-700" htmlFor="viewing-label">
+        這間的名稱或地址（選填）
+      </label>
+      <input
+        id="viewing-label"
+        className="mt-1 w-full rounded-lg border border-gray-300 bg-white p-2"
+        placeholder="例如：公館羅斯福路 5 樓套房"
+        maxLength={60}
+        value={label}
+        onChange={(e) => setLabel(e.target.value)}
+      />
+      <p className="mt-1 text-xs text-gray-400">之後可以在「我的看房紀錄」比較不同租屋處。不填會自動用縣市＋房型＋日期命名。</p>
 
       <label className="mt-4 block text-sm font-medium text-gray-700" htmlFor="viewing-city">
         房子在哪個縣市
@@ -138,7 +155,15 @@ function scoreStyle(score: number): { label: string; className: string } {
   return { label: "紅燈很多，建議再考慮", className: "text-red-700" };
 }
 
-export function ViewingResultView({ result, onRestart }: { result: ViewingResult; onRestart: () => void }) {
+export function ViewingResultView({
+  result,
+  onRestart,
+  restartLabel = "重新檢查",
+}: {
+  result: ViewingResult;
+  onRestart: () => void;
+  restartLabel?: string;
+}) {
   const [copied, setCopied] = useState(false);
   const style = scoreStyle(result.score);
   const questionText = result.questions.map((q, i) => `${i + 1}. ${q}`).join("\n");
@@ -157,6 +182,7 @@ export function ViewingResultView({ result, onRestart }: { result: ViewingResult
   return (
     <section>
       <h1 className="text-xl font-bold text-gray-900">看房健檢結果</h1>
+      <p className="mt-1 text-sm text-gray-600">{result.label}</p>
 
       <div className="mt-4 rounded-lg bg-white p-4 text-center shadow-sm">
         <p className="text-sm text-gray-500">安全分數</p>
@@ -231,8 +257,11 @@ export function ViewingResultView({ result, onRestart }: { result: ViewingResult
       )}
 
       <button type="button" onClick={onRestart} className="mt-4 w-full rounded-lg bg-gray-200 py-2 text-gray-700">
-        重新檢查
+        {restartLabel}
       </button>
+      <a href="/viewings" className="mt-2 block text-center text-sm text-emerald-700 underline">
+        我的看房紀錄
+      </a>
       <Disclaimer />
     </section>
   );

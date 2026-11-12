@@ -5,6 +5,7 @@ import type { KbIndex } from "../src/ai/retrieve.js";
 import { AuthError } from "../src/api/auth.js";
 import type { ApiDeps } from "../src/api/http.js";
 import { handleApi } from "../src/api/router.js";
+import { autoLabel } from "../src/api/viewing.js";
 import { loadKb } from "../src/kb/load.js";
 import { memoryRateLimiter } from "../src/rateLimit.js";
 import { checklistSchema, loadChecklist, type Answer, type Checklist } from "../src/viewing/checklist.js";
@@ -148,16 +149,17 @@ describe("API /viewing", () => {
     const viewings = memoryViewingRepo();
     const deps: ApiDeps = {
       verify: async (t) => {
-        if (t !== "good") throw new AuthError("bad");
-        return { uid: "U1", name: "小美" };
+        if (t === "good") return { uid: "U1", name: "小美" };
+        if (t === "other") return { uid: "U2", name: "阿明" };
+        throw new AuthError("bad");
       },
       users: memoryUserRepo().repo,
       limiter: memoryRateLimiter(),
       kb: await memoryKbIndex((await loadKb()).chunks, fakeEmbedder()),
       viewings: viewings.repo,
     };
-    const call = (method: string, path: string, body?: unknown) =>
-      handleApi({ method, path, headers: { authorization: "Bearer good" }, body }, deps);
+    const call = (method: string, path: string, body?: unknown, token = "good") =>
+      handleApi({ method, path, headers: { authorization: `Bearer ${token}` }, body }, deps);
     return { call, viewings };
   }
 
@@ -202,4 +204,44 @@ describe("API /viewing", () => {
     expect((await call("POST", "/api/viewing", { city: "火星", housingType: "studio", answers: {} })).status).toBe(400);
     expect((await call("POST", "/api/viewing", { city: null, housingType: "studio", answers: { smoke_alarm: "maybe" } })).status).toBe(400);
   });
+
+  it("存下使用者填的名稱；沒填時自動命名", async () => {
+    const { call, viewings } = await setup();
+    await call("POST", "/api/viewing", { label: "  公館羅斯福路 5 樓套房  ", city: "臺北市", housingType: "studio", answers: {} });
+    await call("POST", "/api/viewing", { city: "新北市", housingType: "rooftop", answers: {} });
+    expect(viewings.records[0]!.rec.label).toBe("公館羅斯福路 5 樓套房");
+    expect(viewings.records[1]!.rec.label).toMatch(/^新北市頂樓加蓋 \d{1,2}\/\d{1,2}$/);
+    const tooLong = await call("POST", "/api/viewing", { label: "字".repeat(61), city: null, housingType: "studio", answers: {} });
+    expect(tooLong.status).toBe(400);
+  });
+
+  it("自動命名用台灣日期", () => {
+    // UTC 11/12 17:00 ＝ 台灣 11/13 01:00
+    expect(autoLabel(checklist, "新北市", "rooftop", new Date("2026-11-12T17:00:00Z"))).toBe("新北市頂樓加蓋 11/13");
+    expect(autoLabel(checklist, null, "room", new Date("2026-11-12T03:00:00Z"))).toBe("雅房 11/12");
+  });
+
+  it("看房紀錄新到舊，只列自己的；detail 可並排讀取，讀不到別人的", async () => {
+    const { call } = await setup();
+    const a = (await call("POST", "/api/viewing", { label: "A 套房", city: "新北市", housingType: "studio", answers: { smoke_alarm: "no" } })).body as { id: string };
+    const b = (await call("POST", "/api/viewing", { label: "B 頂加", city: "新北市", housingType: "rooftop", answers: {} })).body as { id: string };
+    await call("POST", "/api/viewing", { label: "別人的", city: null, housingType: "room", answers: {} }, "other");
+
+    const hist = (await call("GET", "/api/viewing/history")).body as { viewings: Array<{ id: string; label: string; redFlagCount: number }> };
+    expect(hist.viewings.map((v) => v.label)).toEqual(["B 頂加", "A 套房"]);
+    expect(hist.viewings[1]!.redFlagCount).toBe(1);
+
+    const detail = await call("POST", "/api/viewing/detail", { ids: [a.id, b.id] });
+    expect(detail.status).toBe(200);
+    const d = detail.body as { viewings: Array<{ label: string; score: number; answers: Record<string, string>; fireRule: { local: unknown[] } }> };
+    expect(d.viewings.map((v) => v.label)).toEqual(["A 套房", "B 頂加"]);
+    expect(d.viewings[0]!.answers.smoke_alarm).toBe("no");
+    expect(d.viewings[1]!.answers.illegal_structure).toBe("yes");
+    expect(d.viewings[0]!.fireRule.local).toHaveLength(2);
+
+    expect((await call("POST", "/api/viewing/detail", { ids: [a.id] }, "other")).status).toBe(404);
+    expect((await call("POST", "/api/viewing/detail", { ids: ["a", "b", "c", "d"] })).status).toBe(400);
+    expect((await call("POST", "/api/viewing/detail", { ids: ["../x"] })).status).toBe(400);
+  });
 });
+

@@ -75,11 +75,25 @@ export const emptyKbIndex: KbIndex = {
 };
 
 export function memoryViewingRepo() {
-  const records: Array<{ uid: string; rec: ViewingRecord }> = [];
+  const records: Array<{ uid: string; rec: ViewingRecord; id: string; createdAt: string }> = [];
   const repo: ViewingRepo = {
     async add(uid, rec) {
-      records.push({ uid, rec });
-      return `v${records.length}`;
+      const id = `v${records.length + 1}`;
+      records.push({ uid, rec, id, createdAt: new Date(Date.UTC(2026, 10, 12, 0, records.length)).toISOString() });
+      return id;
+    },
+    async list(uid, limit) {
+      return records
+        .filter((r) => r.uid === uid)
+        .reverse()
+        .slice(0, limit)
+        .map((r) => ({ ...r.rec, id: r.id, createdAt: r.createdAt }));
+    },
+    async getMany(uid, ids) {
+      return ids.flatMap((id) => {
+        const r = records.find((x) => x.uid === uid && x.id === id);
+        return r ? [{ ...r.rec, id: r.id, createdAt: r.createdAt }] : [];
+      });
     },
   };
   return { repo, records };

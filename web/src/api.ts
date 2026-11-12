@@ -39,12 +39,27 @@ export interface FireRuleArticle {
 
 export interface ViewingResult {
   id: string;
+  label: string;
+  city: string | null;
+  housingType: string;
+  createdAt: string | null;
+  answers: Record<string, ViewingAnswer>;
   score: number;
   redFlags: Array<{ id: string; question: string; why: string; weight: number; citations: CitationLink[] }>;
   unknown: string[];
   questions: string[];
   warning: string | null;
   fireRule: { city: string | null; national: FireRuleArticle | null; local: FireRuleArticle[]; note: string | null };
+}
+
+export interface ViewingSummary {
+  id: string;
+  label: string;
+  city: string | null;
+  housingType: string;
+  score: number;
+  redFlagCount: number;
+  createdAt: string | null;
 }
 
 type TokenGetter = () => string | null;
@@ -78,8 +93,10 @@ export const api = {
   setCity: (city: string | null) => apiFetch<{ city: string | null }>("/me/city", { method: "POST", body: { city } }),
   consent: () => apiFetch<{ ok: true }>("/me/consent", { method: "POST" }),
   viewingChecklist: () => apiFetch<ViewingChecklist>("/viewing/checklist"),
-  submitViewing: (body: { city: string | null; housingType: string; answers: Record<string, ViewingAnswer> }) =>
+  submitViewing: (body: { label?: string; city: string | null; housingType: string; answers: Record<string, ViewingAnswer> }) =>
     apiFetch<ViewingResult>("/viewing", { method: "POST", body }),
+  viewingHistory: () => apiFetch<{ viewings: ViewingSummary[] }>("/viewing/history"),
+  viewingDetail: (ids: string[]) => apiFetch<{ viewings: ViewingResult[] }>("/viewing/detail", { method: "POST", body: { ids } }),
 };
 
 /** 給使用者看的錯誤訊息 */
@@ -87,6 +104,7 @@ export function errorMessage(err: unknown): string {
   if (err instanceof ApiError) {
     if (err.status === 401) return "登入逾時，正在重新登入…";
     if (err.status === 429) return "操作太頻繁了，請等一分鐘再試。";
+    if (err.status === 404) return "找不到這筆紀錄。";
   }
   return "系統暫時出了點問題，請稍後再試。";
 }

@@ -2,6 +2,7 @@ import type { ComponentType } from "react";
 import type { Me } from "./api.ts";
 import { Home } from "./pages/Home.tsx";
 import { ViewingCheck } from "./pages/ViewingCheck.tsx";
+import { ViewingHistory } from "./pages/ViewingHistory.tsx";
 import { LeaseCheck } from "./pages/LeaseCheck.tsx";
 import { Evidence } from "./pages/Evidence.tsx";
 import { Emergency } from "./pages/Emergency.tsx";
@@ -21,6 +22,7 @@ export interface PageProps {
 export const ROUTES: Record<string, ComponentType<PageProps>> = {
   "/": Home,
   "/viewing": ViewingCheck,
+  "/viewings": ViewingHistory,
   "/lease": LeaseCheck,
   "/evidence": Evidence,
   "/emergency": Emergency,
