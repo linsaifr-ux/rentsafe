@@ -52,6 +52,7 @@ function client() {
     viewingHistory: vi.fn(async () => ({ viewings: summaries })),
     viewingChecklist: vi.fn(async () => checklist),
     viewingDetail: vi.fn(async (ids: string[]) => ({ viewings: ids.map((id) => (id === "a" ? A : B)) })),
+    deleteViewing: vi.fn(async () => ({ ok: true as const })),
   };
 }
 
@@ -102,4 +103,35 @@ describe("ViewingHistory", () => {
     render(<ViewingHistory me={me} onMeChange={() => {}} client={c} />);
     expect(await screen.findByRole("link", { name: "去做看房健檢" })).toBeTruthy();
   });
+
+  it("在單筆結果刪除：先確認，刪除後回到列表且該筆消失", async () => {
+    const c = client();
+    render(<ViewingHistory me={me} onMeChange={() => {}} client={c} />);
+    fireEvent.click(await screen.findByText("A 套房"));
+    fireEvent.click(await screen.findByRole("button", { name: "🗑 刪除這筆紀錄" }));
+    const dialog = screen.getByRole("dialog", { name: "刪除這筆看房紀錄？" });
+    expect(within(dialog).getByText(/「A 套房」的回答和結果會永久刪除/)).toBeTruthy();
+
+    // 取消不會刪
+    fireEvent.click(within(dialog).getByRole("button", { name: "取消" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(c.deleteViewing).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "🗑 刪除這筆紀錄" }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "刪除" }));
+    expect(await screen.findByText("我的看房紀錄")).toBeTruthy();
+    expect(c.deleteViewing).toHaveBeenCalledWith("a");
+    expect(screen.queryByText("A 套房")).toBeNull();
+    expect(screen.getByText("B 頂加")).toBeTruthy();
+  });
+
+  it("刪除失敗時留在確認面板並顯示錯誤", async () => {
+    const c = { ...client(), deleteViewing: vi.fn(async () => Promise.reject(new Error("x"))) };
+    render(<ViewingHistory me={me} onMeChange={() => {}} client={c} />);
+    fireEvent.click(await screen.findByText("A 套房"));
+    fireEvent.click(await screen.findByRole("button", { name: "🗑 刪除這筆紀錄" }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "刪除" }));
+    expect(await within(screen.getByRole("dialog")).findByText("系統暫時出了點問題，請稍後再試。")).toBeTruthy();
+  });
 });
+

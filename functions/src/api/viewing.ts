@@ -14,8 +14,11 @@ const viewingSchema = z.object({
   answers: z.record(z.string(), z.enum(ANSWERS)),
 });
 
+const idSchema = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/);
+const deleteSchema = z.object({ id: idSchema });
+
 const detailSchema = z.object({
-  ids: z.array(z.string().regex(/^[A-Za-z0-9_-]{1,64}$/)).min(1).max(VIEWING.compareMax),
+  ids: z.array(idSchema).min(1).max(VIEWING.compareMax),
 });
 
 /** 沒填名稱時自動命名：「新北市頂樓加蓋 11/12」（日期用台灣時間） */
@@ -90,5 +93,12 @@ export const viewingRoutes: Routes = {
     if (found.length === 0) throw new HttpError(404, "not_found");
     const checklist = loadChecklist();
     return json(200, { viewings: await Promise.all(found.map((v) => expand(v, checklist, deps))) });
+  },
+
+  /** 永久刪除自己的一筆看房紀錄（只能刪自己的） */
+  "POST /viewing/delete": async ({ user, body, deps }) => {
+    const { id } = parseBody(deleteSchema, body);
+    if (!(await deps.viewings.delete(user.uid, id))) throw new HttpError(404, "not_found");
+    return json(200, { ok: true });
   },
 };

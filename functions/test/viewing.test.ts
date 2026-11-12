@@ -243,5 +243,21 @@ describe("API /viewing", () => {
     expect((await call("POST", "/api/viewing/detail", { ids: ["a", "b", "c", "d"] })).status).toBe(400);
     expect((await call("POST", "/api/viewing/detail", { ids: ["../x"] })).status).toBe(400);
   });
+
+  it("刪除自己的一筆紀錄；刪不到別人的；不存在回 404", async () => {
+    const { call, viewings } = await setup();
+    const a = (await call("POST", "/api/viewing", { label: "A", city: null, housingType: "studio", answers: {} })).body as { id: string };
+    const b = (await call("POST", "/api/viewing", { label: "B", city: null, housingType: "studio", answers: {} })).body as { id: string };
+
+    expect((await call("POST", "/api/viewing/delete", { id: a.id }, "other")).status).toBe(404);
+    expect(viewings.records).toHaveLength(2);
+
+    expect((await call("POST", "/api/viewing/delete", { id: a.id })).status).toBe(200);
+    const hist = (await call("GET", "/api/viewing/history")).body as { viewings: Array<{ id: string }> };
+    expect(hist.viewings.map((v) => v.id)).toEqual([b.id]);
+
+    expect((await call("POST", "/api/viewing/delete", { id: a.id })).status).toBe(404);
+    expect((await call("POST", "/api/viewing/delete", { id: "../x" })).status).toBe(400);
+  });
 });
 

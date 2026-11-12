@@ -26,6 +26,8 @@ export interface ViewingRepo {
   list(uid: string, limit: number): Promise<StoredViewing[]>;
   /** 依 id 讀取；不存在的 id 略過，順序與輸入相同 */
   getMany(uid: string, ids: string[]): Promise<StoredViewing[]>;
+  /** 永久刪除自己的一筆紀錄；不存在回傳 false */
+  delete(uid: string, id: string): Promise<boolean>;
 }
 
 function fromDoc(id: string, d: FirebaseFirestore.DocumentData): StoredViewing {
@@ -58,6 +60,15 @@ export function firestoreViewingRepo(db: Firestore): ViewingRepo {
       if (ids.length === 0) return [];
       const snaps = await db.getAll(...ids.map((id) => col(uid).doc(id)));
       return snaps.filter((s) => s.exists).map((s) => fromDoc(s.id, s.data()!));
+    },
+    async delete(uid, id) {
+      const ref = col(uid).doc(id);
+      return db.runTransaction(async (tx) => {
+        const snap = await tx.get(ref);
+        if (!snap.exists) return false;
+        tx.delete(ref);
+        return true;
+      });
     },
   };
 }

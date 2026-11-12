@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { api, errorMessage, type ViewingAnswer, type ViewingChecklist, type ViewingResult } from "../api.ts";
 import { ALL_CITIES } from "../cities.ts";
 import { Disclaimer } from "../components/Disclaimer.tsx";
-import { BottomBar, Button, LinkButton, NavCard, SourceChip } from "../components/ui.tsx";
+import { BottomBar, Button, ConfirmSheet, LinkButton, NavCard, SourceChip } from "../components/ui.tsx";
 import type { PageProps } from "../router.tsx";
 
 type Client = Pick<typeof api, "viewingChecklist" | "submitViewing">;
@@ -169,12 +169,30 @@ export function ViewingResultView({
   result,
   onRestart,
   restartLabel = "重新檢查",
+  onDelete,
 }: {
   result: ViewingResult;
   onRestart: () => void;
   restartLabel?: string;
+  /** 有傳才顯示「刪除這筆紀錄」；回傳 Promise，失敗時丟錯 */
+  onDelete?: () => Promise<void>;
 }) {
   const [copied, setCopied] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  async function confirmDelete() {
+    if (!onDelete) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await onDelete();
+    } catch (err) {
+      setDeleteError(errorMessage(err));
+      setDeleting(false);
+    }
+  }
   const style = scoreStyle(result.score);
   const questionText = result.questions.map((q, i) => `${i + 1}. ${q}`).join("\n");
 
@@ -270,14 +288,35 @@ export function ViewingResultView({
       )}
 
       <div className="mt-6 space-y-3">
-        <LinkButton href="/viewings" variant="secondary">
-          📋 我的看房紀錄
-        </LinkButton>
+        {!onDelete && (
+          <LinkButton href="/viewings" variant="secondary">
+            📋 我的看房紀錄
+          </LinkButton>
+        )}
         <Button variant="ghost" onClick={onRestart}>
           {restartLabel}
         </Button>
+        {onDelete && (
+          <Button variant="dangerSoft" onClick={() => setConfirming(true)}>
+            🗑 刪除這筆紀錄
+          </Button>
+        )}
       </div>
       <Disclaimer />
+      {confirming && (
+        <ConfirmSheet
+          title="刪除這筆看房紀錄？"
+          message={`「${result.label}」的回答和結果會永久刪除，無法復原。`}
+          confirmLabel="刪除"
+          busy={deleting}
+          error={deleteError}
+          onConfirm={confirmDelete}
+          onCancel={() => {
+            setConfirming(false);
+            setDeleteError(null);
+          }}
+        />
+      )}
     </section>
   );
 }

@@ -5,12 +5,14 @@ import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from "reac
  * 原則：不用底線文字連結；可點的東西都做成按鈕、卡片或標籤，觸控區至少 44px 高。
  */
 
-type Variant = "primary" | "secondary" | "ghost";
+type Variant = "primary" | "secondary" | "ghost" | "danger" | "dangerSoft";
 
 const VARIANT: Record<Variant, string> = {
   primary: "bg-emerald-600 text-white active:bg-emerald-700 disabled:bg-emerald-600/50",
   secondary: "border border-emerald-600 bg-white text-emerald-700 active:bg-emerald-50 disabled:opacity-50",
   ghost: "bg-gray-100 text-gray-700 active:bg-gray-200 disabled:opacity-50",
+  danger: "bg-red-600 text-white active:bg-red-700 disabled:opacity-50",
+  dangerSoft: "bg-red-50 text-red-700 active:bg-red-100 disabled:opacity-50",
 };
 
 const BASE = "flex min-h-11 w-full items-center justify-center rounded-xl px-4 text-base font-semibold transition-colors";
@@ -63,6 +65,49 @@ export function BottomBar({ children }: { children: ReactNode }) {
   return (
     <div className="sticky bottom-0 -mx-4 mt-4 border-t border-gray-200 bg-white/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur">
       {children}
+    </div>
+  );
+}
+
+/** 從底部滑出的確認面板（刪除等不可復原的動作用） */
+export function ConfirmSheet({
+  title,
+  message,
+  confirmLabel,
+  busy = false,
+  error,
+  onConfirm,
+  onCancel,
+}: {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  busy?: boolean;
+  error?: string | null;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40" onClick={busy ? undefined : onCancel}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className="w-full max-w-md rounded-t-3xl bg-white px-4 pt-5 pb-[max(1rem,env(safe-area-inset-bottom))]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <p className="text-center text-lg font-bold text-gray-900">{title}</p>
+        <p className="mt-2 text-center text-sm text-gray-600">{message}</p>
+        {error && <p className="mt-2 text-center text-sm text-red-700">{error}</p>}
+        <div className="mt-5 space-y-3">
+          <Button variant="danger" onClick={onConfirm} disabled={busy}>
+            {busy ? "處理中…" : confirmLabel}
+          </Button>
+          <Button variant="ghost" onClick={onCancel} disabled={busy}>
+            取消
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

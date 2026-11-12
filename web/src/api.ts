@@ -96,6 +96,7 @@ export const api = {
   submitViewing: (body: { label?: string; city: string | null; housingType: string; answers: Record<string, ViewingAnswer> }) =>
     apiFetch<ViewingResult>("/viewing", { method: "POST", body }),
   viewingHistory: () => apiFetch<{ viewings: ViewingSummary[] }>("/viewing/history"),
+  deleteViewing: (id: string) => apiFetch<{ ok: true }>("/viewing/delete", { method: "POST", body: { id } }),
   viewingDetail: (ids: string[]) => apiFetch<{ viewings: ViewingResult[] }>("/viewing/detail", { method: "POST", body: { ids } }),
 };
 

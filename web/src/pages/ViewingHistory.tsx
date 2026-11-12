@@ -5,7 +5,7 @@ import { BottomBar, Button, LinkButton } from "../components/ui.tsx";
 import type { PageProps } from "../router.tsx";
 import { ViewingResultView } from "./ViewingCheck.tsx";
 
-type Client = Pick<typeof api, "viewingHistory" | "viewingDetail" | "viewingChecklist">;
+type Client = Pick<typeof api, "viewingHistory" | "viewingDetail" | "viewingChecklist" | "deleteViewing">;
 
 /** 一次最多比較幾間（與 functions/src/config.ts VIEWING.compareMax 一致） */
 export const COMPARE_MAX = 3;
@@ -64,9 +64,19 @@ export function ViewingHistory({ client = api }: PageProps & { client?: Client }
 
   const back = () => setView({ kind: "list" });
 
+  async function remove(id: string) {
+    await client.deleteViewing(id);
+    setList((prev) => prev?.filter((v) => v.id !== id) ?? prev);
+    setSelected((prev) => prev.filter((x) => x !== id));
+    setView({ kind: "list" });
+  }
+
   if (error && !list) return <p className="rounded-xl bg-red-50 p-4 text-sm text-red-700">{error}</p>;
   if (!list || !checklist) return <p className="py-8 text-center text-gray-500">載入中…</p>;
-  if (view.kind === "detail") return <ViewingResultView result={view.result} onRestart={back} restartLabel="回到看房紀錄" />;
+  if (view.kind === "detail") {
+    const id = view.result.id;
+    return <ViewingResultView result={view.result} onRestart={back} restartLabel="回到看房紀錄" onDelete={() => remove(id)} />;
+  }
   if (view.kind === "compare") return <CompareView results={view.results} checklist={checklist} onBack={back} />;
 
   const housingLabel = (id: string) => checklist.housingTypes.find((h) => h.id === id)?.label ?? id;
@@ -86,7 +96,7 @@ export function ViewingHistory({ client = api }: PageProps & { client?: Client }
         </div>
       ) : (
         <>
-          <p className="mt-1 text-sm text-gray-600">點一間看當時的結果；勾選 2–{COMPARE_MAX} 間可以並排比較。</p>
+          <p className="mt-1 text-sm text-gray-600">點一間看當時的結果或刪除；勾選 2–{COMPARE_MAX} 間可以並排比較。</p>
           <ul className="mt-4 space-y-3">
             {list.map((v) => {
               const checked = selected.includes(v.id);

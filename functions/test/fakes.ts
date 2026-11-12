@@ -89,6 +89,12 @@ export function memoryViewingRepo() {
         .slice(0, limit)
         .map((r) => ({ ...r.rec, id: r.id, createdAt: r.createdAt }));
     },
+    async delete(uid, id) {
+      const i = records.findIndex((x) => x.uid === uid && x.id === id);
+      if (i < 0) return false;
+      records.splice(i, 1);
+      return true;
+    },
     async getMany(uid, ids) {
       return ids.flatMap((id) => {
         const r = records.find((x) => x.uid === uid && x.id === id);
