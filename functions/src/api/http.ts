@@ -3,6 +3,8 @@ import type { KbIndex } from "../ai/retrieve.js";
 import type { RateLimiter } from "../rateLimit.js";
 import type { UserRepo } from "../users.js";
 import type { ViewingRepo } from "../viewing/repo.js";
+import type { Llm } from "../ai/llm.js";
+import type { LeaseCheckRepo } from "../lease/repo.js";
 import type { AuthUser } from "./auth.js";
 
 export interface ApiRequest {
@@ -24,6 +26,9 @@ export interface ApiDeps {
   /** 知識庫（看房健檢查住警器規定） */
   kb: KbIndex;
   viewings: ViewingRepo;
+  /** 租約健檢；沒設定時 /lease/check 回 503 */
+  lease?: { llm: Llm; repo: LeaseCheckRepo };
+  log?: (msg: string, data?: unknown) => void;
 }
 
 export interface RouteContext {

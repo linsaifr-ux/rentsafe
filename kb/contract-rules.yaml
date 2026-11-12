@@ -1,0 +1,132 @@
+# F2 租約健檢規則（SPEC 8.3）
+#
+# 每條規則：
+#   id          規則代號
+#   check       numeric（程式算數字）｜semantic（模型比對條款，程式驗證引文）｜required（必要欄位）
+#   level       觸發時的燈號 red｜yellow
+#   title       卡片標題
+#   explanation 白話說明（提到法律的地方必須有 basis）
+#   negotiate   可以怎麼跟房東談
+#   hint        有 hint 的規則會送給模型做語意比對（numeric 規則也可以同時有 hint）
+#   basis       依據：
+#                 - { kind: standard, point: 應記載事項第五點, quote: 原文 }   quote 必須是 kb/contract-standard/GL000907.md 的子字串（測試檢查）
+#                 - { kind: law, lawName: 民法, articleNo: "427" }             必須存在於 kb/laws（測試檢查）
+
+# 官方依據（全文逐字摘錄在 kb/contract-standard/GL000907.md）
+standard:
+  name: 住宅租賃定型化契約應記載及不得記載事項
+  issuer: 內政部
+  sourceUrl: https://glrs.moi.gov.tw/LawContent.aspx?id=GL000907
+  updatedAt: 2025-04-18
+
+rules:
+  - id: deposit_max
+    check: numeric
+    level: red
+    title: 押金超過兩個月租金
+    explanation: 押金最多只能收兩個月的租金。超過的部分，可以請房東不要收。
+    negotiate: 「依照租賃條例，押金最多兩個月租金，可以改成兩個月嗎？」
+    basis:
+      - { kind: law, lawName: 租賃住宅市場發展及管理條例, articleNo: "7" }
+      - { kind: standard, point: 應記載事項第五點, quote: 最高不得超過二個月租金之總額 }
+
+  - id: electricity_public_fee
+    check: semantic
+    level: red
+    title: 另外收公共電費
+    explanation: 公共設施（樓梯燈、電梯等）的電費，如果沒有向台電申辦分攤併入你的電費，房東不能另外收。
+    negotiate: 「公共電費有向台電申辦分攤嗎？如果沒有，依內政部規定不能另外收，可以拿掉這條嗎？」
+    hint: 約定承租人除了自己房間的電費以外，還要另外支付公共電費、公共設施電費、公電分攤費用等。
+    basis:
+      - kind: standard
+        point: 應記載事項第六點
+        quote: 如公共設施電費未向台灣電力股份有限公司申辦分攤併入租賃標的電費內者，出租人不得額外收取
+
+  - id: electricity_rate
+    check: numeric
+    level: yellow
+    title: 電費計算方式要確認
+    explanation: 以用電度數計費時，每度電費不能超過該房子電費單上的「當期每度平均電價」。租約寫死一個固定單價，或完全沒寫電費怎麼算，都要先確認。
+    negotiate: 「可以讓我看最近一期的電費單嗎？每度電費想照電費單上的當期每度平均電價計算。」
+    basis:
+      - kind: standard
+        point: 應記載事項第六點
+        quote: 以用電度數計費者，每度電費不得超過該租賃標的電費單「當期每度平均電價」
+
+  - id: review_period
+    check: numeric
+    level: yellow
+    title: 審閱期不足或被拋棄
+    explanation: 簽約前你有權把租約帶回去看至少三天，租約也不能寫你放棄審閱期。
+    negotiate: 「我想先把租約帶回去看三天再簽，可以嗎？」
+    hint: 約定承租人已充分審閱、放棄審閱期間、審閱期少於三天，或當場簽約不得帶回。
+    basis:
+      - { kind: standard, point: 應記載事項第一點, quote: 契約審閱期間至少三日 }
+      - { kind: standard, point: 不得記載事項第一點, quote: 不得記載拋棄審閱期間 }
+
+  - id: early_termination_penalty
+    check: numeric
+    level: red
+    title: 提前解約違約金太高
+    explanation: 依內政部規定，沒有提前一個月通知就提前終止租約時，違約金最高是一個月租金。
+    negotiate: 「提前解約的違約金可以改成最多一個月租金，並且提前一個月通知嗎？」
+    basis:
+      - kind: standard
+        point: 應記載事項第十四點
+        quote: 一方未為先期通知而逕行終止租約者，應賠償他方最高不得超過一個月租金額之違約金
+
+  - id: tax_burden
+    check: semantic
+    level: red
+    title: 要你負擔房屋稅或地價稅
+    explanation: 房屋稅、地價稅應該由房東負擔，也不能約定稅金增加時由你補。
+    negotiate: 「房屋稅、地價稅依規定是房東負擔，可以把這條拿掉嗎？」
+    hint: 約定承租人負擔房屋稅、地價稅或其他租賃物稅捐，或稅金增加時由承租人負擔。不包括公證費、承租人自己的所得稅。
+    basis:
+      - { kind: law, lawName: 民法, articleNo: "427" }
+      - { kind: standard, point: 應記載事項第七點, quote: 租賃住宅之房屋稅、地價稅由出租人負擔 }
+      - { kind: standard, point: 不得記載事項第五點, quote: 不得記載應由出租人負擔之稅賦，若較出租前增加時，其增加部分由承租人負擔 }
+
+  - id: deposit_waiver
+    check: semantic
+    level: red
+    title: 押金不退或拋棄押金返還
+    explanation: 租約結束、你返還房子並清償債務後，房東應返還押金（或抵充債務後剩下的押金）。不能約定押金一律不退。
+    negotiate: 「押金依規定在退租點交後要返還，可以改成扣除實際損壞費用後退還嗎？」
+    hint: 約定押金不退還、承租人拋棄押金返還請求權、提前退租押金全數沒收、押金作為違約金不退等。
+    basis:
+      - { kind: law, lawName: 租賃住宅市場發展及管理條例, articleNo: "7" }
+      - { kind: standard, point: 應記載事項第五點, quote: 返還押金或抵充本契約所生債務後之賸餘押金 }
+
+  - id: repair_all_tenant
+    check: semantic
+    level: yellow
+    title: 修繕全部由你負責
+    explanation: 民法的原則是修繕由房東負擔，但雙方可以另外約定。租約寫「全部由承租人修」時，簽約前要確認範圍。
+    negotiate: 「可以列出哪些東西是我要修的嗎？其他設備壞了是不是由你負責？」
+    hint: 約定所有修繕、全部設備損壞一律由承租人負擔或自行處理，不論原因。
+    basis:
+      - { kind: law, lawName: 民法, articleNo: "429" }
+      - kind: standard
+        point: 應記載事項第九點
+        quote: 租賃住宅或附屬設備損壞時，應由出租人負責修繕。但租賃雙方另有約定、習慣或其損壞係可歸責於承租人之事由者，不在此限
+
+  - id: subsidy_ban
+    check: semantic
+    level: red
+    title: 禁止報稅、設籍或申請租金補貼
+    explanation: 租約不能寫你不得申報租賃費用支出、不得遷入戶籍，或不得申請租金補貼。
+    negotiate: 「依內政部規定，租約不能限制申報租屋費用、遷戶籍或申請租金補貼，可以拿掉這條嗎？」
+    hint: 約定承租人不得申報租賃費用（租金支出）、不得報稅扣除、不得遷入戶籍或設籍、不得申請租金補貼。
+    basis:
+      - { kind: standard, point: 不得記載事項第三點, quote: 不得記載承租人不得申報租賃費用支出 }
+      - { kind: standard, point: 不得記載事項第四點, quote: 不得記載承租人不得遷入戶籍 }
+      - { kind: standard, point: 不得記載事項第十點, quote: 不得記載承租人不得申請租金補貼 }
+
+  - id: missing_fields
+    check: required
+    level: yellow
+    title: 重要內容沒寫清楚
+    explanation: 租期、租金、押金和修繕方式是租約最基本的內容，沒寫清楚之後容易起爭議。
+    negotiate: 「可以把租期、租金、押金和修繕方式都寫進租約嗎？」
+    basis: []

@@ -3,10 +3,18 @@ import { type RetryOptions, withRateLimitRetry } from "./embed.js";
 import type { z } from "zod";
 import { LLM, MODELS } from "../config.js";
 
+/** 一起送給模型的檔案（圖片或 PDF），base64 不含 data: 前綴 */
+export interface LlmFile {
+  mimeType: string;
+  data: string;
+}
+
 export interface LlmRequest {
   system: string;
   user: string;
   temperature?: number;
+  /** 圖片或 PDF（租約健檢用）；只在記憶體中傳遞，不落地 */
+  files?: LlmFile[];
 }
 
 /** 回傳模型輸出的原始文字（要求 JSON） */
@@ -59,12 +67,15 @@ export async function generateJson<T>(
 export function geminiLlm(apiKey: string, model: string = MODELS.chat, opts: RetryOptions = {}): Llm {
   const ai = new GoogleGenAI({ apiKey });
   return {
-    async generate({ system, user, temperature }) {
+    async generate({ system, user, temperature, files }) {
+      const contents = files?.length
+        ? [{ role: "user", parts: [...files.map((f) => ({ inlineData: { mimeType: f.mimeType, data: f.data } })), { text: user }] }]
+        : user;
       const res = await withRateLimitRetry(
         () =>
           ai.models.generateContent({
             model,
-            contents: user,
+            contents,
             config: {
               systemInstruction: system,
               responseMimeType: "application/json",

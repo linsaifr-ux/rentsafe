@@ -40,5 +40,6 @@
 - `npm run kb:fetch`：從全國法規資料庫下載條文到 `kb/laws/`（下載後用 git diff 檢查）
 - `npm run kb:ingest -- --dry-run`：只看變更報告；`GEMINI_API_KEY=… npm run kb:ingest` 正式匯入；emulator 測試可用 `--fake-embed`
 - `GEMINI_API_KEY=… npm run eval`：跑 `eval/questions.seed.jsonl`，結果寫到 `eval/results/`
+- `GEMINI_API_KEY=… npm run lease:demo -w functions -- ../demo/sample-lease.pdf`：用真的模型跑租約健檢（不寫 Firestore），示範租約原稿 `demo/sample-lease.html`
 - `LINE_CHANNEL_ACCESS_TOKEN=… LIFF_ID=… npm run richmenu -w functions`：建立並套用圖文選單（圖檔 `functions/assets/richmenu.jpg`，原稿 `.svg`）
 - `npm run deploy`：build 後部署（需先在 `.firebaserc` 填正式專案 ID、建立 `functions/.env.<專案ID>`）

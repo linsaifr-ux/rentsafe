@@ -3,7 +3,7 @@ import { onRequest } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
-import { REGION } from "./config.js";
+import { MODELS, REGION } from "./config.js";
 import { geminiEmbedder } from "./ai/embed.js";
 import { geminiLlm } from "./ai/llm.js";
 import { answerQuestion } from "./ai/orchestrator.js";
@@ -24,12 +24,14 @@ import {
 } from "./secrets.js";
 import { firestoreUserRepo } from "./users.js";
 import { firestoreViewingRepo } from "./viewing/repo.js";
+import { firestoreLeaseCheckRepo } from "./lease/repo.js";
 
 initializeApp();
 setGlobalOptions({ region: REGION, maxInstances: 10 });
 
 /** LIFF 呼叫的 HTTPS API（Hosting 將 /api/** 轉到這裡） */
-export const api = onRequest({ cors: false }, async (req, res) => {
+// 租約健檢要讀照片：Gemini 金鑰、較長逾時、較大記憶體（照片只在記憶體，不落地）
+export const api = onRequest({ cors: false, secrets: [GEMINI_API_KEY], timeoutSeconds: 120, memory: "1GiB" }, async (req, res) => {
   const db = getFirestore();
   try {
     const out = await handleApi(
@@ -40,6 +42,8 @@ export const api = onRequest({ cors: false }, async (req, res) => {
         limiter: firestoreRateLimiter(db),
         kb: firestoreKbIndex(db),
         viewings: firestoreViewingRepo(db),
+        lease: { llm: geminiLlm(GEMINI_API_KEY.value(), MODELS.vision), repo: firestoreLeaseCheckRepo(db) },
+        log: (msg, data) => logger.error(msg, data),
       },
     );
     res.status(out.status).json(out.body);

@@ -13,7 +13,8 @@
     "test:watch": "vitest",
     "richmenu": "tsx src/line/richmenu.ts",
     "kb:fetch": "tsx src/kb/fetchLaws.ts",
-    "kb:ingest": "tsx src/kb/ingest.ts"
+    "kb:ingest": "tsx src/kb/ingest.ts",
+    "lease:demo": "tsx src/lease/demo.ts"
   },
   "dependencies": {
     "@google/genai": "^3.1.0",

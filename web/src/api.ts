@@ -62,6 +62,48 @@ export interface ViewingSummary {
   createdAt: string | null;
 }
 
+/** F2 租約健檢（對應 functions/src/lease/check.ts） */
+export interface LeaseFile {
+  mimeType: string;
+  /** base64，不含 data: 前綴 */
+  data: string;
+}
+
+export interface LeaseBasis {
+  kind: "standard" | "law";
+  label: string;
+  quote: string | null;
+  url: string | null;
+}
+
+export interface LeaseFinding {
+  ruleId: string;
+  level: "red" | "yellow";
+  title: string;
+  explanation: string;
+  detail: string | null;
+  quotes: string[];
+  negotiate: string;
+  basis: LeaseBasis[];
+}
+
+export type LeaseResult =
+  | { status: "not_lease"; readability: "good" | "partial" | "poor" }
+  | {
+      status: "ok";
+      id: string;
+      readability: "good" | "partial" | "poor";
+      fields: {
+        monthlyRent: number | null;
+        deposit: number | null;
+        leaseStart: string | null;
+        leaseEnd: string | null;
+        electricityRule: string | null;
+      };
+      findings: LeaseFinding[];
+      passed: Array<{ ruleId: string; title: string }>;
+    };
+
 type TokenGetter = () => string | null;
 
 /** 呼叫後端，一律帶 Authorization: Bearer <LIFF ID token> */
@@ -95,6 +137,7 @@ export const api = {
   viewingChecklist: () => apiFetch<ViewingChecklist>("/viewing/checklist"),
   submitViewing: (body: { label?: string; city: string | null; housingType: string; answers: Record<string, ViewingAnswer> }) =>
     apiFetch<ViewingResult>("/viewing", { method: "POST", body }),
+  leaseCheck: (files: LeaseFile[]) => apiFetch<LeaseResult>("/lease/check", { method: "POST", body: { files } }),
   viewingHistory: () => apiFetch<{ viewings: ViewingSummary[] }>("/viewing/history"),
   deleteViewing: (id: string) => apiFetch<{ ok: true }>("/viewing/delete", { method: "POST", body: { id } }),
   viewingDetail: (ids: string[]) => apiFetch<{ viewings: ViewingResult[] }>("/viewing/detail", { method: "POST", body: { ids } }),
@@ -106,6 +149,8 @@ export function errorMessage(err: unknown): string {
     if (err.status === 401) return "登入逾時，正在重新登入…";
     if (err.status === 429) return "操作太頻繁了，請等一分鐘再試。";
     if (err.status === 404) return "找不到這筆紀錄。";
+    if (err.status === 413) return "檔案太大了，請少選幾張或改用照片。";
+    if (err.status === 502) return "分析失敗了，請確認照片清楚後再試一次。";
   }
   return "系統暫時出了點問題，請稍後再試。";
 }

@@ -50,6 +50,18 @@ export const VIEWING = {
   compareMax: 3,
 } as const;
 
+/** 租約健檢（SPEC 8） */
+export const LEASE = {
+  /** 一次最多幾個檔案（照片或 PDF） */
+  maxFiles: 6,
+  /** 所有檔案解碼後合計上限（位元組）；前端會先壓縮照片 */
+  maxTotalBytes: 8 * 1024 * 1024,
+  /** 接受的檔案類型 */
+  mimeTypes: ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"],
+  /** 抽取的條款最多幾條（送語意比對） */
+  maxClauses: 80,
+} as const;
+
 export const RATE_LIMITS = {
   perUserPerMinute: 10,
   qaPerUserPerDay: 50,
@@ -61,9 +73,6 @@ export const RATE_LIMITS = {
 
 /** 問法條時聊天室「輸入中」動畫秒數（LINE 規定 5–60 且為 5 的倍數；回覆送出後動畫會自動消失） */
 export const LINE_LOADING_SECONDS = 60;
-
-/** 租約健檢非同步門檻（毫秒），超過先回「分析中」（SPEC 8.1） */
-export const LEASE_ASYNC_THRESHOLD_MS = 10_000;
 
 /** 轉介門檻：押金爭議金額（新台幣），超過附轉介卡（SPEC 5.1） */
 export const REFERRAL_DEPOSIT_THRESHOLD_TWD = 20_000;
