@@ -1,4 +1,5 @@
 import { normalizeCity } from "../cities.js";
+import { LINE_LOADING_SECONDS } from "../config.js";
 import type { UserDoc, UserRepo } from "../users.js";
 import type { LineClient } from "./client.js";
 import { ASK_LAW_GUIDE, citySetMessage, textMessage, welcomeMessage } from "./flex.js";
@@ -54,8 +55,11 @@ export async function handleEvent(ev: LineEvent, deps: WebhookDeps): Promise<Lin
         return deps.saveEvidence ? deps.saveEvidence({ uid, event: ev }) : [EVIDENCE_NOT_READY];
       }
       if (message.type === "text" && message.text) {
+        if (!deps.answerQuestion) return [QA_NOT_READY];
+        // 回答要十幾秒，先顯示「輸入中」動畫（LINE 只支援一對一聊天）；失敗不影響回答
+        if (ev.source.type === "user") await deps.line.showLoading(uid, LINE_LOADING_SECONDS).catch((err: unknown) => deps.log?.("showLoading failed", { err: String(err) }));
         const user = await deps.users.ensure(uid, {});
-        return deps.answerQuestion ? deps.answerQuestion({ uid, text: message.text, user }) : [QA_NOT_READY];
+        return deps.answerQuestion({ uid, text: message.text, user });
       }
       return [textMessage("目前只看得懂文字、圖片和檔案喔！")];
     }

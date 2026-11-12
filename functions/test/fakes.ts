@@ -5,6 +5,7 @@ import type { UserDoc, UserRepo } from "../src/users.js";
 export function fakeLine(profiles: Record<string, string> = {}) {
   const replies: Array<{ replyToken: string; messages: LineMessage[] }> = [];
   const pushes: Array<{ to: string; messages: LineMessage[] }> = [];
+  const loadings: Array<{ chatId: string; seconds: number }> = [];
   const client: LineClient = {
     async reply(replyToken, messages) {
       replies.push({ replyToken, messages });
@@ -12,12 +13,15 @@ export function fakeLine(profiles: Record<string, string> = {}) {
     async push(to, messages) {
       pushes.push({ to, messages });
     },
+    async showLoading(chatId, seconds) {
+      loadings.push({ chatId, seconds });
+    },
     async getProfile(userId): Promise<LineProfile | null> {
       const name = profiles[userId];
       return name ? { userId, displayName: name } : null;
     },
   };
-  return { client, replies, pushes };
+  return { client, replies, pushes, loadings };
 }
 
 export function memoryUserRepo() {

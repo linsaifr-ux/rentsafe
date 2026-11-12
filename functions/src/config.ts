@@ -49,6 +49,9 @@ export const RATE_LIMITS = {
   qaGlobalPerDay: 1000,
 } as const;
 
+/** 問法條時聊天室「輸入中」動畫秒數（LINE 規定 5–60 且為 5 的倍數；回覆送出後動畫會自動消失） */
+export const LINE_LOADING_SECONDS = 60;
+
 /** 租約健檢非同步門檻（毫秒），超過先回「分析中」（SPEC 8.1） */
 export const LEASE_ASYNC_THRESHOLD_MS = 10_000;
 

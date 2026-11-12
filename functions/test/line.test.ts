@@ -175,6 +175,18 @@ describe("processWebhook", () => {
     });
     expect(asked).toEqual(["押金可以收幾個月？"]);
     expect(line.replies[1]?.messages).toEqual([{ type: "text", text: "答案" }]);
+    // 沒接 F5 時不顯示動畫；接上後回答前先顯示「輸入中」動畫
+    expect(line.loadings).toEqual([{ chatId: "U1", seconds: 60 }]);
+  });
+
+  it("「輸入中」動畫失敗時仍正常回答", async () => {
+    const { line, deps } = setup();
+    line.client.showLoading = async () => {
+      throw new Error("LINE API 500");
+    };
+    const ev = { type: "message", timestamp: 1, source: src(), replyToken: "r", message: { id: "m", type: "text", text: "漏水" } };
+    await processWebhook(webhook([ev]), SECRET, { ...deps, answerQuestion: async () => [{ type: "text", text: "答案" }] });
+    expect(line.replies[0]?.messages).toEqual([{ type: "text", text: "答案" }]);
   });
 
   it("圖片與 #存證 文字走存證流程", async () => {
@@ -219,6 +231,20 @@ describe("createLineClient", () => {
     expect(calls[0]?.url).toBe("https://api.line.me/v2/bot/message/reply");
     expect((calls[0]?.init.headers as Record<string, string>).Authorization).toBe("Bearer TOKEN");
     expect(JSON.parse(String(calls[0]?.init.body)).messages).toHaveLength(5);
+  });
+
+  it("showLoading 呼叫 chat/loading/start，秒數調成 5 的倍數且不超過 60", async () => {
+    const calls: Array<{ url: string; init: RequestInit }> = [];
+    const fetchImpl = (async (url: string, init: RequestInit) => {
+      calls.push({ url, init });
+      return new Response("{}", { status: 202 });
+    }) as unknown as typeof fetch;
+    const c = createLineClient("TOKEN", fetchImpl);
+    await c.showLoading("U1", 90);
+    await c.showLoading("U1", 12);
+    expect(calls[0]?.url).toBe("https://api.line.me/v2/bot/chat/loading/start");
+    expect(JSON.parse(String(calls[0]?.init.body))).toEqual({ chatId: "U1", loadingSeconds: 60 });
+    expect(JSON.parse(String(calls[1]?.init.body))).toEqual({ chatId: "U1", loadingSeconds: 10 });
   });
 
   it("API 錯誤時丟出例外", async () => {

@@ -11,6 +11,8 @@ export interface LineClient {
   reply(replyToken: string, messages: LineMessage[]): Promise<void>;
   push(to: string, messages: LineMessage[]): Promise<void>;
   getProfile(userId: string): Promise<LineProfile | null>;
+  /** 在一對一聊天室顯示「輸入中」動畫；送出回覆後自動消失 */
+  showLoading(chatId: string, seconds: number): Promise<void>;
 }
 
 export class LineApiError extends Error {
@@ -41,6 +43,8 @@ export function createLineClient(accessToken: string, fetchImpl: typeof fetch = 
     // reply token 一次最多 5 則訊息
     reply: (replyToken, messages) => post("/message/reply", { replyToken, messages: messages.slice(0, 5) }),
     push: (to, messages) => post("/message/push", { to, messages: messages.slice(0, 5) }),
+    showLoading: (chatId, seconds) =>
+      post("/chat/loading/start", { chatId, loadingSeconds: Math.min(60, Math.max(5, Math.round(seconds / 5) * 5)) }),
     async getProfile(userId) {
       const res = await fetchImpl(`${API}/profile/${encodeURIComponent(userId)}`, { headers });
       if (!res.ok) return null;
