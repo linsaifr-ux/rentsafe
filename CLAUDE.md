@@ -1,4 +1,4 @@
-# 租安心（Zuanxin）
+# 租安心（RentSafe）
 
 在 LINE 裡使用的 AI 租屋法律小幫手：看房健檢、租約健檢、存證廊、情境急救包、法條問答、案件摘要與轉介。NextWave 2026 AI 法創黑客松參賽作品。
 
@@ -35,7 +35,7 @@
 
 - `npm run ci`：lint＋typecheck＋test＋build（與 GitHub Actions 相同）
 - `npm test`：前後端 Vitest
-- `npm run emulators`：build functions 後啟動 Emulator Suite（專案 `demo-zuanxin`，UI 在 http://127.0.0.1:4000，Hosting 在 :5050）。需要 Java 21：`export PATH="/opt/homebrew/opt/openjdk@21/bin:$PATH"`；假的金鑰在 `functions/.secret.local`、`functions/.env.demo-zuanxin`
+- `npm run emulators`：build functions 後啟動 Emulator Suite（專案 `demo-rentsafe`，UI 在 http://127.0.0.1:4000，Hosting 在 :5050）。需要 Java 21：`export PATH="/opt/homebrew/opt/openjdk@21/bin:$PATH"`；假的金鑰在 `functions/.secret.local`、`functions/.env.demo-rentsafe`
 - `npm run dev -w web`：Vite 開發伺服器（`/api` 轉到 Hosting emulator）
 - `npm run kb:fetch`：從全國法規資料庫下載條文到 `kb/laws/`（下載後用 git diff 檢查）
 - `npm run kb:ingest -- --dry-run`：只看變更報告；`GEMINI_API_KEY=… npm run kb:ingest` 正式匯入；emulator 測試可用 `--fake-embed`

@@ -45,7 +45,7 @@ export function richMenuDefinition(liffId: string) {
   return {
     size: RICHMENU_SIZE,
     selected: true,
-    name: "zuanxin-main",
+    name: "rentsafe-main",
     chatBarText: "租安心選單",
     areas,
   };

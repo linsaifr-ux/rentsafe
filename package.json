@@ -1,5 +1,5 @@
 {
-  "name": "zuanxin",
+  "name": "rentsafe",
   "private": true,
   "description": "租安心：在 LINE 裡使用的 AI 租屋法律小幫手",
   "engines": {
@@ -15,7 +15,7 @@
     "test": "npm run test --workspaces",
     "build": "npm run build --workspaces",
     "ci": "npm run lint && npm run typecheck && npm test && npm run build",
-    "emulators": "npm run build -w functions && firebase emulators:start --project demo-zuanxin",
+    "emulators": "npm run build -w functions && firebase emulators:start --project demo-rentsafe",
     "deploy": "npm run build && firebase deploy",
     "kb:ingest": "npm run kb:ingest -w functions --",
     "kb:fetch": "npm run kb:fetch -w functions",

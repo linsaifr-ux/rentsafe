@@ -1,4 +1,4 @@
-# 租安心 規格書（實作計畫）
+# 租安心（RentSafe）規格書（實作計畫）
 
 版本：2026-11-11
 用途：NextWave 2026「AI 法創黑客松」參賽作品。本文件是唯一的規格來源，所有產品與技術決定以本文件為準。
@@ -57,7 +57,7 @@
 ## 2. 專案結構
 
 ```
-zuanxin/
+rentsafe/
 ├─ SPEC.md                    # 本文件
 ├─ CLAUDE.md                  # 給 Claude Code 的工作守則
 ├─ firebase.json / .firebaserc / firestore.rules / firestore.indexes.json / storage.rules
