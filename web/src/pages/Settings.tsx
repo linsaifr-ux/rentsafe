@@ -2,6 +2,8 @@ import { useState } from "react";
 import { api, errorMessage } from "../api.ts";
 import { ALL_CITIES } from "../cities.ts";
 import type { PageProps } from "../router.tsx";
+import { Button } from "../components/ui.tsx";
+import { FIELD, FIELD_LABEL } from "./ViewingCheck.tsx";
 
 export function Settings({ me, onMeChange }: PageProps) {
   const [city, setCity] = useState<string>(me.city ?? "");
@@ -24,13 +26,14 @@ export function Settings({ me, onMeChange }: PageProps) {
 
   return (
     <section>
-      <h1 className="text-xl font-bold text-gray-900">我的設定</h1>
-      <label className="mt-4 block text-sm font-medium text-gray-700" htmlFor="city">
+      <h1 className="text-2xl font-bold text-gray-900">我的設定</h1>
+      <div className="mt-4 rounded-2xl bg-white p-4 shadow-sm">
+      <label className={FIELD_LABEL} htmlFor="city">
         租屋縣市
       </label>
       <select
         id="city"
-        className="mt-1 w-full rounded-lg border border-gray-300 bg-white p-2"
+        className={FIELD}
         value={city}
         onChange={(e) => setCity(e.target.value)}
       >
@@ -41,15 +44,11 @@ export function Settings({ me, onMeChange }: PageProps) {
           </option>
         ))}
       </select>
-      <button
-        type="button"
-        onClick={save}
-        disabled={saving}
-        className="mt-3 w-full rounded-lg bg-emerald-600 py-2 font-semibold text-white disabled:opacity-50"
-      >
+      <Button className="mt-4" onClick={save} disabled={saving}>
         {saving ? "儲存中…" : "儲存"}
-      </button>
-      {status && <p className="mt-2 text-sm text-gray-600">{status}</p>}
+      </Button>
+      {status && <p className="mt-2 text-center text-sm text-gray-600">{status}</p>}
+      </div>
       <p className="mt-6 text-xs text-gray-400">「刪除我的資料」功能準備中。</p>
     </section>
   );

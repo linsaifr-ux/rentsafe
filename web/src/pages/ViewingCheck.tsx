@@ -2,11 +2,16 @@ import { useEffect, useState } from "react";
 import { api, errorMessage, type ViewingAnswer, type ViewingChecklist, type ViewingResult } from "../api.ts";
 import { ALL_CITIES } from "../cities.ts";
 import { Disclaimer } from "../components/Disclaimer.tsx";
+import { BottomBar, Button, LinkButton, NavCard, SourceChip } from "../components/ui.tsx";
 import type { PageProps } from "../router.tsx";
 
 type Client = Pick<typeof api, "viewingChecklist" | "submitViewing">;
 
 const ANSWER_LABEL: Record<ViewingAnswer, string> = { yes: "是", no: "否", unknown: "不確定" };
+
+/** 手機輸入框：16px 字避免 iOS 自動放大 */
+export const FIELD = "mt-1 min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-base text-gray-900";
+export const FIELD_LABEL = "block text-sm font-semibold text-gray-700";
 
 /** F1 看房健檢（SPEC 7）：勾選清單 → 安全分數、紅燈、住警器規定、要問房東的問題 */
 export function ViewingCheck({ me, client = api }: PageProps & { client?: Client }) {
@@ -23,8 +28,8 @@ export function ViewingCheck({ me, client = api }: PageProps & { client?: Client
     client.viewingChecklist().then(setChecklist, (err: unknown) => setError(errorMessage(err)));
   }, [client]);
 
-  if (error && !checklist) return <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>;
-  if (!checklist) return <p className="text-gray-500">載入中…</p>;
+  if (error && !checklist) return <p className="rounded-xl bg-red-50 p-4 text-sm text-red-700">{error}</p>;
+  if (!checklist) return <p className="py-8 text-center text-gray-500">載入中…</p>;
 
   if (result) return <ViewingResultView result={result} onRestart={() => setResult(null)} />;
 
@@ -46,73 +51,81 @@ export function ViewingCheck({ me, client = api }: PageProps & { client?: Client
 
   return (
     <section>
-      <h1 className="text-xl font-bold text-gray-900">看房健檢</h1>
+      <h1 className="text-2xl font-bold text-gray-900">看房健檢</h1>
       <p className="mt-1 text-sm text-gray-600">看房時邊看邊勾，最後會告訴你哪裡有紅燈、要問房東什麼。</p>
-      <a href="/viewings" className="mt-2 inline-block text-sm text-emerald-700 underline">
-        我的看房紀錄
-      </a>
 
-      <label className="mt-4 block text-sm font-medium text-gray-700" htmlFor="viewing-label">
-        這間的名稱或地址（選填）
-      </label>
-      <input
-        id="viewing-label"
-        className="mt-1 w-full rounded-lg border border-gray-300 bg-white p-2"
-        placeholder="例如：公館羅斯福路 5 樓套房"
-        maxLength={60}
-        value={label}
-        onChange={(e) => setLabel(e.target.value)}
-      />
-      <p className="mt-1 text-xs text-gray-400">之後可以在「我的看房紀錄」比較不同租屋處。不填會自動用縣市＋房型＋日期命名。</p>
+      <div className="mt-4">
+        <NavCard href="/viewings" icon="📋" title="我的看房紀錄" desc="看過的房子都在這，可以互相比較" />
+      </div>
 
-      <label className="mt-4 block text-sm font-medium text-gray-700" htmlFor="viewing-city">
-        房子在哪個縣市
-      </label>
-      <select
-        id="viewing-city"
-        className="mt-1 w-full rounded-lg border border-gray-300 bg-white p-2"
-        value={city}
-        onChange={(e) => setCity(e.target.value)}
-      >
-        <option value="">其他／不確定</option>
-        {ALL_CITIES.map((c) => (
-          <option key={c} value={c}>
-            {c}
-          </option>
-        ))}
-      </select>
-
-      <fieldset className="mt-4">
-        <legend className="text-sm font-medium text-gray-700">房型</legend>
-        <div className="mt-1 grid grid-cols-3 gap-2">
-          {checklist.housingTypes.map((h) => (
-            <button
-              key={h.id}
-              type="button"
-              aria-pressed={housingType === h.id}
-              onClick={() => setHousingType(h.id)}
-              className={`rounded-lg border p-2 text-sm ${housingType === h.id ? "border-emerald-600 bg-emerald-50 font-semibold text-emerald-800" : "border-gray-300 bg-white text-gray-700"}`}
-            >
-              {h.label}
-            </button>
-          ))}
+      <div className="mt-4 space-y-4 rounded-2xl bg-white p-4 shadow-sm">
+        <div>
+          <label className={FIELD_LABEL} htmlFor="viewing-label">
+            這間的名稱或地址（選填）
+          </label>
+          <input
+            id="viewing-label"
+            className={FIELD}
+            placeholder="例如：公館羅斯福路 5 樓套房"
+            maxLength={60}
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+          />
+          <p className="mt-1 text-xs text-gray-400">不填會自動用縣市＋房型＋日期命名。</p>
         </div>
-      </fieldset>
+
+        <div>
+          <label className={FIELD_LABEL} htmlFor="viewing-city">
+            房子在哪個縣市
+          </label>
+          <select id="viewing-city" className={FIELD} value={city} onChange={(e) => setCity(e.target.value)}>
+            <option value="">其他／不確定</option>
+            {ALL_CITIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <fieldset>
+          <legend className={FIELD_LABEL}>房型</legend>
+          <div className="mt-1 grid grid-cols-3 gap-2">
+            {checklist.housingTypes.map((h) => {
+              const on = housingType === h.id;
+              return (
+                <button
+                  key={h.id}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => setHousingType(h.id)}
+                  className={`min-h-11 rounded-xl border text-sm ${on ? "border-emerald-600 bg-emerald-50 font-semibold text-emerald-800" : "border-gray-200 bg-gray-50 text-gray-700 active:bg-gray-100"}`}
+                >
+                  {h.label}
+                </button>
+              );
+            })}
+          </div>
+        </fieldset>
+      </div>
 
       <ol className="mt-4 space-y-3">
         {checklist.items.map((it, i) => {
           const locked = preset[it.id];
           const value = locked ?? answers[it.id];
           return (
-            <li key={it.id} className="rounded-lg bg-white p-3 shadow-sm">
-              <p className="text-sm font-medium text-gray-900">
-                {i + 1}. {it.question}
+            <li key={it.id} className="rounded-2xl bg-white p-4 shadow-sm">
+              <p className="text-base font-medium text-gray-900">
+                <span className="mr-1 text-gray-400">{i + 1}.</span>
+                {it.question}
               </p>
-              <details className="mt-1 text-xs text-gray-500">
-                <summary>為什麼重要</summary>
-                <p className="mt-1">{it.why}</p>
+              <details className="group mt-2">
+                <summary className="inline-flex min-h-8 cursor-pointer list-none items-center gap-1 rounded-full bg-gray-100 px-3 text-xs text-gray-600 [&::-webkit-details-marker]:hidden">
+                  ⓘ 為什麼重要
+                </summary>
+                <p className="mt-2 rounded-xl bg-gray-50 p-3 text-sm text-gray-600">{it.why}</p>
               </details>
-              <div className="mt-2 flex gap-2" role="radiogroup" aria-label={it.question}>
+              <div className="mt-3 grid grid-cols-3 gap-2" role="radiogroup" aria-label={it.question}>
                 {(["yes", "no", "unknown"] as const).map((a) => (
                   <button
                     key={a}
@@ -121,38 +134,35 @@ export function ViewingCheck({ me, client = api }: PageProps & { client?: Client
                     aria-checked={value === a}
                     disabled={Boolean(locked)}
                     onClick={() => setAnswers((prev) => ({ ...prev, [it.id]: a }))}
-                    className={`flex-1 rounded-md border py-1 text-sm ${value === a ? "border-emerald-600 bg-emerald-600 text-white" : "border-gray-300 bg-white text-gray-700"} disabled:opacity-70`}
+                    className={`min-h-11 rounded-xl border text-base ${value === a ? "border-emerald-600 bg-emerald-600 font-semibold text-white" : "border-gray-200 bg-gray-50 text-gray-700 active:bg-gray-100"} disabled:opacity-70`}
                   >
                     {ANSWER_LABEL[a]}
                   </button>
                 ))}
               </div>
-              {locked && <p className="mt-1 text-xs text-gray-500">依你選的房型自動帶入</p>}
+              {locked && <p className="mt-2 text-xs text-gray-500">依你選的房型自動帶入</p>}
             </li>
           );
         })}
       </ol>
 
-      <p className="mt-4 text-center text-xs text-gray-500">
-        已回答 {answered}／{checklist.items.length} 題，沒回答的會當作「不確定」
-      </p>
-      <button
-        type="button"
-        onClick={submit}
-        disabled={!housingType || submitting}
-        className="mt-2 w-full rounded-lg bg-emerald-600 py-3 font-semibold text-white disabled:opacity-50"
-      >
-        {submitting ? "分析中…" : housingType ? "看結果" : "請先選房型"}
-      </button>
-      {error && <p className="mt-2 text-sm text-red-700">{error}</p>}
+      <BottomBar>
+        <p className="mb-2 text-center text-xs text-gray-500">
+          已回答 {answered}／{checklist.items.length} 題・沒回答的當作「不確定」
+        </p>
+        <Button onClick={submit} disabled={!housingType || submitting}>
+          {submitting ? "分析中…" : housingType ? "看結果" : "請先選房型"}
+        </Button>
+        {error && <p className="mt-2 text-center text-sm text-red-700">{error}</p>}
+      </BottomBar>
     </section>
   );
 }
 
-function scoreStyle(score: number): { label: string; className: string } {
-  if (score >= 80) return { label: "大致安全", className: "text-emerald-700" };
-  if (score >= 60) return { label: "有些地方要注意", className: "text-amber-600" };
-  return { label: "紅燈很多，建議再考慮", className: "text-red-700" };
+function scoreStyle(score: number): { label: string; className: string; ring: string } {
+  if (score >= 80) return { label: "大致安全", className: "text-emerald-700", ring: "bg-emerald-50" };
+  if (score >= 60) return { label: "有些地方要注意", className: "text-amber-600", ring: "bg-amber-50" };
+  return { label: "紅燈很多，建議再考慮", className: "text-red-700", ring: "bg-red-50" };
 }
 
 export function ViewingResultView({
@@ -178,48 +188,41 @@ export function ViewingResultView({
   }
 
   const { fireRule } = result;
+  const articles = [...fireRule.local, ...(fireRule.national ? [fireRule.national] : [])];
 
   return (
     <section>
-      <h1 className="text-xl font-bold text-gray-900">看房健檢結果</h1>
+      <h1 className="text-2xl font-bold text-gray-900">看房健檢結果</h1>
       <p className="mt-1 text-sm text-gray-600">{result.label}</p>
 
-      <div className="mt-4 rounded-lg bg-white p-4 text-center shadow-sm">
-        <p className="text-sm text-gray-500">安全分數</p>
-        <p className={`text-5xl font-bold ${style.className}`} data-testid="viewing-score">
+      <div className={`mt-4 rounded-2xl p-5 text-center ${style.ring}`}>
+        <p className="text-sm text-gray-600">安全分數</p>
+        <p className={`text-6xl font-bold ${style.className}`} data-testid="viewing-score">
           {result.score}
         </p>
-        <p className={`mt-1 text-sm font-semibold ${style.className}`}>{style.label}</p>
-        <p className="mt-2 text-xs text-gray-400">分數只依你勾選的項目計算，不代表房子實際安全程度。</p>
+        <p className={`mt-1 font-semibold ${style.className}`}>{style.label}</p>
+        <p className="mt-2 text-xs text-gray-500">分數只依你勾選的項目計算，不代表房子實際安全程度。</p>
       </div>
 
-      {result.warning && <p className="mt-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">{result.warning}</p>}
+      {result.warning && <p className="mt-3 rounded-2xl bg-amber-50 p-4 text-sm text-amber-800">⚠️ {result.warning}</p>}
 
       <h2 className="mt-6 text-lg font-bold text-gray-900">🚩 紅燈（{result.redFlags.length}）</h2>
       {result.redFlags.length === 0 ? (
-        <p className="mt-2 text-sm text-gray-600">沒有紅燈。</p>
+        <p className="mt-2 rounded-2xl bg-white p-4 text-sm text-gray-600 shadow-sm">沒有紅燈。</p>
       ) : (
-        <ul className="mt-2 space-y-2">
+        <ul className="mt-2 space-y-3">
           {result.redFlags.map((f) => (
-            <li key={f.id} className="rounded-lg border-l-4 border-red-500 bg-white p-3 shadow-sm">
-              <p className="text-sm font-medium text-gray-900">{f.question}</p>
-              <p className="mt-1 text-xs text-gray-600">{f.why}</p>
+            <li key={f.id} className="rounded-2xl border-l-4 border-red-500 bg-white p-4 shadow-sm">
+              <p className="font-medium text-gray-900">{f.question}</p>
+              <p className="mt-1 text-sm text-gray-600">{f.why}</p>
               {f.citations.length > 0 && (
-                <p className="mt-1 text-xs text-gray-500">
-                  出處：
-                  {f.citations.map((c, i) => (
-                    <span key={`${c.lawName}${c.articleNo}`}>
-                      {i > 0 && "、"}
-                      {c.url ? (
-                        <a className="text-emerald-700 underline" href={c.url} target="_blank" rel="noreferrer">
-                          {c.lawName}第 {c.articleNo} 條
-                        </a>
-                      ) : (
-                        `${c.lawName}第 ${c.articleNo} 條`
-                      )}
-                    </span>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {f.citations.map((c) => (
+                    <SourceChip key={`${c.lawName}${c.articleNo}`} href={c.url}>
+                      {c.lawName}第 {c.articleNo} 條
+                    </SourceChip>
                   ))}
-                </p>
+                </div>
               )}
             </li>
           ))}
@@ -227,17 +230,24 @@ export function ViewingResultView({
       )}
 
       <h2 className="mt-6 text-lg font-bold text-gray-900">🔥 住警器規定</h2>
-      {fireRule.note && <p className="mt-2 text-sm text-gray-600">{fireRule.note}</p>}
-      <div className="mt-2 space-y-2">
-        {[...fireRule.local, ...(fireRule.national ? [fireRule.national] : [])].map((a) => (
-          <details key={`${a.lawName}${a.articleNo}`} className="rounded-lg bg-white p-3 text-sm shadow-sm" open={fireRule.local.includes(a)}>
-            <summary className="font-medium text-gray-900">
-              {a.lawName} 第 {a.articleNo} 條
+      {fireRule.note && <p className="mt-2 rounded-2xl bg-gray-100 p-4 text-sm text-gray-600">{fireRule.note}</p>}
+      <div className="mt-2 space-y-3">
+        {articles.map((a) => (
+          <details key={`${a.lawName}${a.articleNo}`} className="group rounded-2xl bg-white shadow-sm" open={fireRule.local.includes(a)}>
+            <summary className="flex min-h-12 cursor-pointer list-none items-center gap-2 px-4 py-3 font-medium text-gray-900 [&::-webkit-details-marker]:hidden">
+              <span className="flex-1">
+                {a.lawName} 第 {a.articleNo} 條
+              </span>
+              <span className="text-gray-400 transition-transform group-open:rotate-90" aria-hidden="true">
+                ›
+              </span>
             </summary>
-            <p className="mt-2 whitespace-pre-line text-gray-700">{a.text}</p>
-            <a className="mt-1 inline-block text-xs text-emerald-700 underline" href={a.sourceUrl} target="_blank" rel="noreferrer">
-              官方原文
-            </a>
+            <div className="px-4 pb-4">
+              <p className="whitespace-pre-line text-sm leading-relaxed text-gray-700">{a.text}</p>
+              <div className="mt-3">
+                <SourceChip href={a.sourceUrl}>官方原文</SourceChip>
+              </div>
+            </div>
           </details>
         ))}
       </div>
@@ -245,23 +255,28 @@ export function ViewingResultView({
       {result.questions.length > 0 && (
         <>
           <h2 className="mt-6 text-lg font-bold text-gray-900">💬 要問房東的問題</h2>
-          <ol className="mt-2 list-decimal space-y-1 rounded-lg bg-white p-3 pl-8 text-sm text-gray-800 shadow-sm">
-            {result.questions.map((q) => (
-              <li key={q}>{q}</li>
+          <ol className="mt-2 space-y-2 rounded-2xl bg-white p-4 text-sm text-gray-800 shadow-sm">
+            {result.questions.map((q, i) => (
+              <li key={q} className="flex gap-2">
+                <span className="text-gray-400">{i + 1}.</span>
+                <span>{q}</span>
+              </li>
             ))}
           </ol>
-          <button type="button" onClick={copy} className="mt-2 w-full rounded-lg border border-emerald-600 py-2 font-semibold text-emerald-700">
-            {copied ? "已複製，可以貼給房東" : "複製問題"}
-          </button>
+          <Button variant="secondary" className="mt-3" onClick={copy}>
+            {copied ? "✓ 已複製，可以貼給房東" : "複製問題"}
+          </Button>
         </>
       )}
 
-      <button type="button" onClick={onRestart} className="mt-4 w-full rounded-lg bg-gray-200 py-2 text-gray-700">
-        {restartLabel}
-      </button>
-      <a href="/viewings" className="mt-2 block text-center text-sm text-emerald-700 underline">
-        我的看房紀錄
-      </a>
+      <div className="mt-6 space-y-3">
+        <LinkButton href="/viewings" variant="secondary">
+          📋 我的看房紀錄
+        </LinkButton>
+        <Button variant="ghost" onClick={onRestart}>
+          {restartLabel}
+        </Button>
+      </div>
       <Disclaimer />
     </section>
   );

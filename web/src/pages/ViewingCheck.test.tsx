@@ -79,12 +79,12 @@ describe("ViewingCheck", () => {
 
     expect((await screen.findByTestId("viewing-score")).textContent).toBe("25");
     expect(c.submitViewing).toHaveBeenCalledWith({ label: "公館套房", city: "新北市", housingType: "rooftop", answers: { smoke_alarm: "no" } });
-    expect(screen.getByRole("link", { name: "消防法第 6 條" }).getAttribute("href")).toBe("https://law.moj.gov.tw/x");
+    expect(screen.getByRole("link", { name: /消防法第 6 條/ }).getAttribute("href")).toBe("https://law.moj.gov.tw/x");
     expect(screen.getByText("新北市火災預防自治條例 第 5 條")).toBeTruthy();
     expect(screen.getByText("房間有裝住警器嗎？")).toBeTruthy();
     expect(screen.getByRole("button", { name: "複製問題" })).toBeTruthy();
     expect(screen.getByText(DISCLAIMER_TEXT)).toBeTruthy();
-    expect(screen.getAllByRole("link", { name: "我的看房紀錄" })[0]!.getAttribute("href")).toBe("/viewings");
+    expect(screen.getAllByRole("link", { name: /我的看房紀錄/ })[0]!.getAttribute("href")).toBe("/viewings");
   });
 
   it("載入清單失敗顯示錯誤", async () => {

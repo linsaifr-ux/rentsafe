@@ -78,14 +78,14 @@ describe("ViewingHistory", () => {
     expect(await screen.findByText("比較租屋處")).toBeTruthy();
     expect(c.viewingDetail).toHaveBeenCalledWith(["a", "b"]);
     expect(screen.getByText("最高")).toBeTruthy();
-    expect(screen.getByRole("rowheader", { name: "房間裡有裝住警器嗎？" })).toBeTruthy();
-    // 押金兩間都答「是」，預設不顯示
-    expect(screen.queryByRole("rowheader", { name: "押金在兩個月租金以內嗎？" })).toBeNull();
-    const row = screen.getByRole("rowheader", { name: "房間裡有裝住警器嗎？" }).closest("tr")!;
+    expect(screen.getAllByTestId("compare-score").map((e) => e.textContent)).toEqual(["90", "40"]);
+    const row = screen.getByRole("listitem", { name: "房間裡有裝住警器嗎？" });
     expect(within(row).getByText("🚩 否")).toBeTruthy();
+    // 押金兩間都答「是」，預設不顯示
+    expect(screen.queryByRole("listitem", { name: "押金在兩個月租金以內嗎？" })).toBeNull();
 
     fireEvent.click(screen.getByLabelText("只看回答不同的題目"));
-    expect(screen.getByRole("rowheader", { name: "押金在兩個月租金以內嗎？" })).toBeTruthy();
+    expect(screen.getByRole("listitem", { name: "押金在兩個月租金以內嗎？" })).toBeTruthy();
     expect(screen.getByText(DISCLAIMER_TEXT)).toBeTruthy();
   });
 

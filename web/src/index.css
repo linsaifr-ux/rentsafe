@@ -1,1 +1,13 @@
 @import "tailwindcss";
+
+/* 手機介面基本設定 */
+html,
+body {
+  background: var(--color-gray-50);
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: system-ui, -apple-system, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+}

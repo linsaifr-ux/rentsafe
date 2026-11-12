@@ -37,9 +37,9 @@ export default function App({ load = defaultLoad, path }: AppProps) {
   const Page = ROUTES[route] ?? ROUTES["/"]!;
 
   return (
-    <main className="mx-auto min-h-screen max-w-md bg-gray-50 p-4">
-      {state.kind === "loading" && <p className="text-gray-500">載入中…</p>}
-      {state.kind === "error" && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{state.message}</p>}
+    <main className="mx-auto min-h-dvh max-w-md bg-gray-50 px-4 pt-5 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+      {state.kind === "loading" && <p className="py-8 text-center text-gray-500">載入中…</p>}
+      {state.kind === "error" && <p className="rounded-xl bg-red-50 p-4 text-sm text-red-700">{state.message}</p>}
       {state.kind === "ready" && (
         <Page me={state.me} onMeChange={(me) => setState({ kind: "ready", me })} />
       )}
