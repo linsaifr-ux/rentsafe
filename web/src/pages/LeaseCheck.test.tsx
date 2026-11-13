@@ -71,7 +71,7 @@ function setup(leaseCheck: typeof api.leaseCheck = vi.fn(async () => RESULT), in
 describe("LeaseCheck", () => {
   it("說明不會存原圖；選照片後可以移除；沒選檔不能送出", async () => {
     setup();
-    expect(screen.getByText("🔒 你的租約不會被存下來")).toBeTruthy();
+    expect(screen.getByText("你的租約不會被存下來")).toBeTruthy();
     expect((screen.getByRole("button", { name: "請先拍照或選檔" }) as HTMLButtonElement).disabled).toBe(true);
 
     fireEvent.change(screen.getByTestId("lease-picker"), { target: { files: [file("p1.jpg", "image/jpeg"), file("p2.jpg", "image/jpeg")] } });

@@ -1,13 +1,153 @@
 @import "tailwindcss";
 
-/* 手機介面基本設定 */
-html,
-body {
-  background: var(--color-gray-50);
-  -webkit-tap-highlight-color: transparent;
-  -webkit-text-size-adjust: 100%;
+/*
+ * 手機介面設計基礎：顏色、陰影、動畫。
+ * 動畫都用 CSS，系統開「減少動態效果」時自動關閉。
+ */
+@theme {
+  --font-sans: system-ui, -apple-system, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.04), 0 4px 16px -4px rgb(15 23 42 / 0.08);
+  --shadow-float: 0 -4px 24px -8px rgb(15 23 42 / 0.12);
+  --shadow-brand: 0 12px 32px -12px rgb(5 150 105 / 0.55);
+
+  --ease-out-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --animate-enter: enter 420ms var(--ease-out-soft) both;
+  --animate-fade: fade 220ms ease-out both;
+  --animate-sheet: sheet 340ms var(--ease-out-soft) both;
+  --animate-pop: pop 320ms var(--ease-spring) both;
+  --animate-scan: scan 2.2s ease-in-out infinite;
+  --animate-shimmer: shimmer 1.4s linear infinite;
+  --animate-float: float 3.2s ease-in-out infinite;
+
+  @keyframes enter {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes sheet {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: none;
+    }
+  }
+  @keyframes pop {
+    0% {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  @keyframes scan {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(72px);
+    }
+  }
+  @keyframes shimmer {
+    from {
+      background-position: -200% 0;
+    }
+    to {
+      background-position: 200% 0;
+    }
+  }
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-6px);
+    }
+  }
 }
 
+@keyframes ring {
+  from {
+    stroke-dashoffset: var(--ring-from);
+  }
+}
+
+:root {
+  interpolate-size: allow-keywords;
+}
+
+html,
 body {
-  font-family: system-ui, -apple-system, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  background: var(--color-slate-50);
+  color: var(--color-slate-900);
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 子元素依序淡入（列表、卡片群） */
+.stagger > * {
+  animation: var(--animate-enter);
+}
+.stagger > *:nth-child(2) { animation-delay: 40ms; }
+.stagger > *:nth-child(3) { animation-delay: 80ms; }
+.stagger > *:nth-child(4) { animation-delay: 120ms; }
+.stagger > *:nth-child(5) { animation-delay: 160ms; }
+.stagger > *:nth-child(6) { animation-delay: 200ms; }
+.stagger > *:nth-child(7) { animation-delay: 240ms; }
+.stagger > *:nth-child(n + 8) { animation-delay: 280ms; }
+
+/* 展開收合的平滑高度（支援的瀏覽器才有） */
+details::details-content {
+  block-size: 0;
+  overflow-y: clip;
+  transition:
+    block-size 260ms var(--ease-out-soft),
+    content-visibility 260ms allow-discrete;
+}
+details[open]::details-content {
+  block-size: auto;
+}
+details > summary {
+  list-style: none;
+}
+details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--color-slate-200) 0%, var(--color-slate-100) 50%, var(--color-slate-200) 100%);
+  background-size: 200% 100%;
+  animation: var(--animate-shimmer);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
 }

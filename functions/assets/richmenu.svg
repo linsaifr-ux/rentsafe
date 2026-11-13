@@ -1,26 +1,34 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="2500" height="1686" viewBox="0 0 2500 1686"><rect width="2500" height="1686" fill="#F9FAFB"/>
-<rect x="16" y="16" width="801" height="811" rx="48" fill="#047857"/>
-<text x="416.5" y="330" font-size="220" text-anchor="middle" font-family="Apple Color Emoji">🔍</text>
-<text x="416.5" y="560" font-size="130" font-weight="700" fill="#FFFFFF" text-anchor="middle" font-family="PingFang TC">看房健檢</text>
-<text x="416.5" y="690" font-size="72" fill="#E5E7EB" text-anchor="middle" font-family="PingFang TC">簽約前先檢查</text>
-<rect x="849" y="16" width="801" height="811" rx="48" fill="#0F766E"/>
-<text x="1249.5" y="330" font-size="220" text-anchor="middle" font-family="Apple Color Emoji">📄</text>
-<text x="1249.5" y="560" font-size="130" font-weight="700" fill="#FFFFFF" text-anchor="middle" font-family="PingFang TC">租約健檢</text>
-<text x="1249.5" y="690" font-size="72" fill="#E5E7EB" text-anchor="middle" font-family="PingFang TC">拍照找地雷</text>
-<rect x="1682" y="16" width="802" height="811" rx="48" fill="#0369A1"/>
-<text x="2083.0" y="330" font-size="220" text-anchor="middle" font-family="Apple Color Emoji">📸</text>
-<text x="2083.0" y="560" font-size="130" font-weight="700" fill="#FFFFFF" text-anchor="middle" font-family="PingFang TC">存證廊</text>
-<text x="2083.0" y="690" font-size="72" fill="#E5E7EB" text-anchor="middle" font-family="PingFang TC">照片自動存證</text>
-<rect x="16" y="859" width="801" height="811" rx="48" fill="#B91C1C"/>
-<text x="416.5" y="1173" font-size="220" text-anchor="middle" font-family="Apple Color Emoji">🆘</text>
-<text x="416.5" y="1403" font-size="130" font-weight="700" fill="#FFFFFF" text-anchor="middle" font-family="PingFang TC">出事了</text>
-<text x="416.5" y="1533" font-size="72" fill="#E5E7EB" text-anchor="middle" font-family="PingFang TC">情境急救包</text>
-<rect x="849" y="859" width="801" height="811" rx="48" fill="#7C3AED"/>
-<text x="1249.5" y="1173" font-size="220" text-anchor="middle" font-family="Apple Color Emoji">💬</text>
-<text x="1249.5" y="1403" font-size="130" font-weight="700" fill="#FFFFFF" text-anchor="middle" font-family="PingFang TC">問法條</text>
-<text x="1249.5" y="1533" font-size="72" fill="#E5E7EB" text-anchor="middle" font-family="PingFang TC">附條文出處</text>
-<rect x="1682" y="859" width="802" height="811" rx="48" fill="#4B5563"/>
-<text x="2083.0" y="1173" font-size="220" text-anchor="middle" font-family="Apple Color Emoji">⚙️</text>
-<text x="2083.0" y="1403" font-size="130" font-weight="700" fill="#FFFFFF" text-anchor="middle" font-family="PingFang TC">我的設定</text>
-<text x="2083.0" y="1533" font-size="72" fill="#E5E7EB" text-anchor="middle" font-family="PingFang TC">縣市與資料</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="2500" height="1686" viewBox="0 0 2500 1686">
+<defs><filter id="sh" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="10" stdDeviation="18" flood-color="#0F172A" flood-opacity="0.08"/></filter></defs>
+<rect width="2500" height="1686" fill="#F1F5F9"/>
+<rect x="28" y="28" width="777" height="787" rx="72" fill="#FFFFFF" filter="url(#sh)"/>
+<rect x="266.5" y="136" width="300" height="300" rx="88" fill="#ECFDF5"/>
+<g transform="translate(326.5 196) scale(7.5)" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="m9 14 2 2 4-4"></path></g>
+<text x="416.5" y="576" font-size="120" font-weight="700" fill="#0F172A" text-anchor="middle" font-family="PingFang TC">看房健檢</text>
+<text x="416.5" y="696" font-size="70" fill="#64748B" text-anchor="middle" font-family="PingFang TC">簽約前先檢查</text>
+<rect x="861" y="28" width="777" height="787" rx="72" fill="#FFFFFF" filter="url(#sh)"/>
+<rect x="1099.5" y="136" width="300" height="300" rx="88" fill="#F0F9FF"/>
+<g transform="translate(1159.5 196) scale(7.5)" fill="none" stroke="#0284C7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"></path><path d="M14 2v5a1 1 0 0 0 1 1h5"></path><circle cx="11.5" cy="14.5" r="2.5"></circle><path d="M13.3 16.3 15 18"></path></g>
+<text x="1249.5" y="576" font-size="120" font-weight="700" fill="#0F172A" text-anchor="middle" font-family="PingFang TC">租約健檢</text>
+<text x="1249.5" y="696" font-size="70" fill="#64748B" text-anchor="middle" font-family="PingFang TC">拍照找地雷</text>
+<rect x="1694" y="28" width="778" height="787" rx="72" fill="#FFFFFF" filter="url(#sh)"/>
+<rect x="1933" y="136" width="300" height="300" rx="88" fill="#FFFBEB"/>
+<g transform="translate(1993 196) scale(7.5)" fill="none" stroke="#D97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z"></path><circle cx="12" cy="13" r="3"></circle></g>
+<text x="2083" y="576" font-size="120" font-weight="700" fill="#0F172A" text-anchor="middle" font-family="PingFang TC">存證廊</text>
+<text x="2083" y="696" font-size="70" fill="#64748B" text-anchor="middle" font-family="PingFang TC">照片自動存證</text>
+<rect x="28" y="871" width="777" height="787" rx="72" fill="#FFFFFF" filter="url(#sh)"/>
+<rect x="266.5" y="979" width="300" height="300" rx="88" fill="#FFF1F2"/>
+<g transform="translate(326.5 1039) scale(7.5)" fill="none" stroke="#E11D48" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18v-6a5 5 0 1 1 10 0v6"></path><path d="M5 21a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2z"></path><path d="M21 12h1"></path><path d="M18.5 4.5 18 5"></path><path d="M2 12h1"></path><path d="M12 2v1"></path><path d="m4.929 4.929.707.707"></path><path d="M12 12v6"></path></g>
+<text x="416.5" y="1419" font-size="120" font-weight="700" fill="#0F172A" text-anchor="middle" font-family="PingFang TC">出事了</text>
+<text x="416.5" y="1539" font-size="70" fill="#64748B" text-anchor="middle" font-family="PingFang TC">情境急救包</text>
+<rect x="861" y="871" width="777" height="787" rx="72" fill="#FFFFFF" filter="url(#sh)"/>
+<rect x="1099.5" y="979" width="300" height="300" rx="88" fill="#F5F3FF"/>
+<g transform="translate(1159.5 1039) scale(7.5)" fill="none" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"></path><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></g>
+<text x="1249.5" y="1419" font-size="120" font-weight="700" fill="#0F172A" text-anchor="middle" font-family="PingFang TC">問法條</text>
+<text x="1249.5" y="1539" font-size="70" fill="#64748B" text-anchor="middle" font-family="PingFang TC">附條文出處</text>
+<rect x="1694" y="871" width="778" height="787" rx="72" fill="#FFFFFF" filter="url(#sh)"/>
+<rect x="1933" y="979" width="300" height="300" rx="88" fill="#F1F5F9"/>
+<g transform="translate(1993 1039) scale(7.5)" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"></path><circle cx="12" cy="12" r="3"></circle></g>
+<text x="2083" y="1419" font-size="120" font-weight="700" fill="#0F172A" text-anchor="middle" font-family="PingFang TC">我的設定</text>
+<text x="2083" y="1539" font-size="70" fill="#64748B" text-anchor="middle" font-family="PingFang TC">縣市與資料</text>
 </svg>

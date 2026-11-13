@@ -10,7 +10,35 @@ import {
   type ViewingSummary,
 } from "../api.ts";
 import { Disclaimer } from "../components/Disclaimer.tsx";
-import { BottomBar, Button, LinkButton } from "../components/ui.tsx";
+import {
+  ArrowLeft,
+  Check,
+  ChevronRight,
+  ClipboardCheck,
+  ClipboardList,
+  Crown,
+  FileSearch,
+  FileText,
+  Flag,
+  GitCompareArrows,
+  House,
+  Plus,
+  Wallet,
+} from "lucide-react";
+import {
+  BottomBar,
+  Button,
+  Card,
+  EmptyState,
+  ErrorText,
+  IconBadge,
+  LinkButton,
+  Notice,
+  PageHeader,
+  PageSkeleton,
+  ScoreRing,
+  SectionTitle,
+} from "../components/ui.tsx";
 import type { PageProps } from "../router.tsx";
 import { LeaseResultView } from "./LeaseCheck.tsx";
 import { ViewingResultView } from "./ViewingCheck.tsx";
@@ -37,33 +65,35 @@ function formatDate(iso: string | null): string {
 /** 租約紅黃燈小標籤 */
 export function LeaseBadge({ lease }: { lease: LeaseSummary }) {
   return (
-    <span className="mt-1 inline-flex items-center gap-2 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-700">
-      <span>📄 租約</span>
+    <span className="mt-1.5 inline-flex items-center gap-2 rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-700">
+      <span className="inline-flex items-center gap-1">
+        <FileText className="size-3.5 text-slate-500" aria-hidden="true" />
+        租約
+      </span>
       {lease.red > 0 && (
         <span className="inline-flex items-center gap-1 font-semibold text-red-700" aria-label={`租約紅燈 ${lease.red}`}>
-          <span className="h-2 w-2 rounded-full bg-red-500" aria-hidden="true" />
+          <span className="size-2 rounded-full bg-red-500" aria-hidden="true" />
           {lease.red}
         </span>
       )}
       {lease.yellow > 0 && (
         <span className="inline-flex items-center gap-1 font-semibold text-amber-700" aria-label={`租約黃燈 ${lease.yellow}`}>
-          <span className="h-2 w-2 rounded-full bg-amber-400" aria-hidden="true" />
+          <span className="size-2 rounded-full bg-amber-400" aria-hidden="true" />
           {lease.yellow}
         </span>
       )}
-      {lease.red === 0 && lease.yellow === 0 && <span className="text-emerald-700">✓ 沒問題</span>}
+      {lease.red === 0 && lease.yellow === 0 && (
+        <span className="inline-flex items-center gap-0.5 font-semibold text-emerald-700">
+          <Check className="size-3.5" strokeWidth={3} aria-hidden="true" />
+          沒問題
+        </span>
+      )}
     </span>
   );
 }
 
 const money = (n: number | null) => (n === null ? "未寫" : `${n.toLocaleString("zh-TW")} 元`);
 const months = (n: number | null) => (n === null ? "未寫" : `${Math.round(n * 10) / 10} 個月`);
-
-function scoreColor(score: number): string {
-  if (score >= 80) return "text-emerald-700";
-  if (score >= 60) return "text-amber-600";
-  return "text-red-700";
-}
 
 /** 我的看房紀錄：列表、單筆結果、2–3 間並排比較（SPEC 7） */
 export function ViewingHistory({ client = api }: PageProps & { client?: Client }) {
@@ -134,8 +164,17 @@ export function ViewingHistory({ client = api }: PageProps & { client?: Client }
     setView({ kind: "list" });
   }
 
-  if (error && !list) return <p className="rounded-xl bg-red-50 p-4 text-sm text-red-700">{error}</p>;
-  if (!list || !checklist) return <p className="py-8 text-center text-gray-500">載入中…</p>;
+  if (error && !list) {
+    return (
+      <section>
+        <PageHeader title="我的看房紀錄" />
+        <Notice tone="red" className="mt-0">
+          {error}
+        </Notice>
+      </section>
+    );
+  }
+  if (!list || !checklist) return <PageSkeleton />;
   if (view.kind === "detail") {
     const r = view.result;
     return (
@@ -167,52 +206,55 @@ export function ViewingHistory({ client = api }: PageProps & { client?: Client }
   const housingLabel = (id: string) => checklist.housingTypes.find((h) => h.id === id)?.label ?? id;
 
   return (
-    <section>
-      <h1 className="text-2xl font-bold text-gray-900">我的看房紀錄</h1>
+    <section className="animate-enter">
+      <PageHeader title="我的看房紀錄" />
       {list.length === 0 && leaseOnly.length === 0 ? (
-        <div className="mt-4 rounded-2xl bg-white p-5 text-center shadow-sm">
-          <p className="text-4xl" aria-hidden="true">
-            🏠
-          </p>
-          <p className="mt-2 text-gray-600">還沒有紀錄。看房時做一次健檢，就會存在這裡。</p>
-          <LinkButton href="/viewing" variant="primary" className="mt-4">
+        <EmptyState icon={House} tone="violet" title="還沒有紀錄" desc="看房時做一次健檢，就會存在這裡。">
+          <LinkButton href="/viewing" variant="primary" icon={ClipboardCheck}>
             去做看房健檢
           </LinkButton>
-        </div>
+        </EmptyState>
       ) : (
         <>
-          <p className="mt-1 text-sm text-gray-600">點一間看當時的結果或刪除；勾選 2–{COMPARE_MAX} 間可以並排比較。</p>
-          <ul className="mt-4 space-y-3">
+          <p className="px-1 text-sm leading-relaxed text-slate-600">點一間看當時的結果；左邊圈起 2–{COMPARE_MAX} 間可以並排比較。</p>
+          <ul className="stagger mt-4 space-y-3">
             {list.map((v) => {
               const checked = selected.includes(v.id);
               const full = !checked && selected.length >= COMPARE_MAX;
               return (
-                <li key={v.id} className={`flex items-stretch overflow-hidden rounded-2xl bg-white shadow-sm ${checked ? "ring-2 ring-emerald-600" : ""}`}>
-                  <label className={`flex w-14 shrink-0 items-center justify-center border-r border-gray-100 ${full ? "opacity-40" : "active:bg-gray-50"}`}>
+                <li
+                  key={v.id}
+                  className={`flex items-stretch overflow-hidden rounded-3xl bg-white shadow-card ring-2 transition duration-200 ${checked ? "ring-emerald-500" : "ring-transparent"}`}
+                >
+                  <label className={`flex w-14 shrink-0 cursor-pointer items-center justify-center ${full ? "opacity-30" : "active:bg-slate-50"}`}>
                     <input
                       type="checkbox"
-                      className="h-6 w-6 accent-emerald-600"
+                      className="peer sr-only"
                       aria-label={`比較 ${v.label}`}
                       checked={checked}
                       disabled={full}
                       onChange={() => toggle(v.id)}
                     />
+                    <span
+                      className="flex size-6 items-center justify-center rounded-full border-2 border-slate-300 transition duration-200 peer-checked:border-emerald-500 peer-checked:bg-emerald-500 peer-focus-visible:ring-4 peer-focus-visible:ring-emerald-500/20"
+                      aria-hidden="true"
+                    >
+                      {checked && <Check className="size-4 animate-pop text-white" strokeWidth={3} />}
+                    </span>
                   </label>
-                  <button type="button" className="flex min-h-16 min-w-0 flex-1 items-center gap-3 p-4 text-left active:bg-gray-50" onClick={() => open([v.id])}>
+                  <button type="button" className="flex min-h-20 min-w-0 flex-1 items-center gap-3 py-3 pr-3 text-left transition active:bg-slate-50" onClick={() => open([v.id])}>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate font-medium text-gray-900">{v.label}</span>
-                      <span className="block text-xs text-gray-500">
+                      <span className="block truncate font-semibold text-slate-900">{v.label}</span>
+                      <span className="block text-xs text-slate-500">
                         {[v.city, housingLabel(v.housingType), formatDate(v.createdAt)].filter(Boolean).join("・")}
                       </span>
                       {v.lease && <LeaseBadge lease={v.lease} />}
                     </span>
-                    <span className="text-right">
-                      <span className={`block text-2xl font-bold ${scoreColor(v.score)}`}>{v.score}</span>
-                      <span className="block text-xs text-gray-500">紅燈 {v.redFlagCount}</span>
+                    <span className="flex flex-col items-center">
+                      <ScoreRing score={v.score} size={48} stroke={5} small />
+                      <span className="mt-0.5 text-[11px] text-slate-500">紅燈 {v.redFlagCount}</span>
                     </span>
-                    <span className="text-xl text-gray-300" aria-hidden="true">
-                      ›
-                    </span>
+                    <ChevronRight className="size-5 shrink-0 text-slate-300" aria-hidden="true" />
                   </button>
                 </li>
               );
@@ -220,49 +262,50 @@ export function ViewingHistory({ client = api }: PageProps & { client?: Client }
           </ul>
           {leaseOnly.length > 0 && (
             <>
-              <h2 className="mt-6 text-lg font-bold text-gray-900">📄 只有租約</h2>
-              <p className="mt-1 text-sm text-gray-600">沒有對應看房紀錄的租約健檢。</p>
-              <ul className="mt-3 space-y-3">
+              <SectionTitle icon={FileText} tone="sky" count={leaseOnly.length}>
+                只有租約
+              </SectionTitle>
+              <p className="mt-1 px-1 text-sm text-slate-500">沒有對應看房紀錄的租約健檢。</p>
+              <ul className="stagger mt-3 space-y-3">
                 {leaseOnly.map((l) => (
                   <li key={l.id}>
                     <button
                       type="button"
-                      className="flex min-h-16 w-full items-center gap-3 rounded-2xl bg-white p-4 text-left shadow-sm active:bg-gray-50"
+                      className="flex min-h-16 w-full items-center gap-3 rounded-3xl bg-white p-4 text-left shadow-card transition active:scale-[0.98] active:bg-slate-50"
                       onClick={() => openLease(l.id, null)}
                     >
+                      <IconBadge icon={FileSearch} tone="sky" />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate font-medium text-gray-900">{l.label}</span>
-                        <span className="block text-xs text-gray-500">
+                        <span className="block truncate font-semibold text-slate-900">{l.label}</span>
+                        <span className="block text-xs text-slate-500">
                           {[`月租 ${money(l.monthlyRent)}`, formatDate(l.createdAt)].filter(Boolean).join("・")}
                         </span>
                         <LeaseBadge lease={l} />
                       </span>
-                      <span className="text-xl text-gray-300" aria-hidden="true">
-                        ›
-                      </span>
+                      <ChevronRight className="size-5 shrink-0 text-slate-300" aria-hidden="true" />
                     </button>
                   </li>
                 ))}
               </ul>
             </>
           )}
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <LinkButton href="/viewing" variant="secondary">
-              ＋ 看房健檢
+          <div className="mt-6 grid grid-cols-2 gap-3">
+            <LinkButton href="/viewing" variant="secondary" icon={Plus}>
+              看房健檢
             </LinkButton>
-            <LinkButton href="/lease" variant="secondary">
-              ＋ 租約健檢
+            <LinkButton href="/lease" variant="secondary" icon={Plus}>
+              租約健檢
             </LinkButton>
           </div>
           <BottomBar>
-            <Button onClick={() => open(selected)} disabled={selected.length < 2 || loading}>
+            <Button onClick={() => open(selected)} disabled={selected.length < 2 || loading} icon={selected.length >= 2 && !loading ? GitCompareArrows : undefined}>
               {loading ? "載入中…" : selected.length < 2 ? "勾選 2 間以上來比較" : `比較 ${selected.length} 間`}
             </Button>
-            {error && <p className="mt-2 text-center text-sm text-red-700">{error}</p>}
+            {error && <ErrorText>{error}</ErrorText>}
           </BottomBar>
         </>
       )}
-      {error && list.length === 0 && <p className="mt-2 text-sm text-red-700">{error}</p>}
+      {error && list.length === 0 && <ErrorText>{error}</ErrorText>}
     </section>
   );
 }
@@ -273,25 +316,36 @@ export function CompareView({ results, checklist, onBack }: { results: ViewingRe
   const best = Math.max(...results.map((r) => r.score));
   const cols = results.length === 3 ? "grid-cols-3" : "grid-cols-2";
 
+  const cell = "flex min-h-11 items-center justify-center gap-1 rounded-2xl text-sm transition";
   return (
-    <section>
-      <h1 className="text-2xl font-bold text-gray-900">比較租屋處</h1>
+    <section className="animate-enter">
+      <PageHeader title="比較租屋處" back={onBack} />
 
-      <div className={`sticky top-0 z-10 -mx-4 mt-3 grid ${cols} gap-2 bg-gray-50/95 px-4 py-2 backdrop-blur`}>
-        {results.map((r) => (
-          <div key={r.id} className={`rounded-2xl bg-white p-3 text-center shadow-sm ${r.score === best && results.length > 1 ? "ring-2 ring-emerald-600" : ""}`}>
-            <p className="line-clamp-2 min-h-8 text-xs font-semibold text-gray-900">{r.label}</p>
-            <p className={`mt-1 text-3xl font-bold ${scoreColor(r.score)}`} data-testid="compare-score">
-              {r.score}
-            </p>
-            <p className="text-xs text-gray-500">紅燈 {r.redFlags.length}</p>
-            {r.score === best && results.length > 1 && <p className="mt-1 text-xs font-semibold text-emerald-700">最高</p>}
-          </div>
-        ))}
+      <div className={`sticky top-14 z-20 -mx-4 grid ${cols} gap-2 bg-slate-50/85 px-4 pt-1 pb-3 backdrop-blur-xl`}>
+        {results.map((r) => {
+          const top = r.score === best && results.length > 1;
+          return (
+            <div key={r.id} className={`relative flex flex-col items-center rounded-3xl bg-white p-3 text-center shadow-card ring-2 ${top ? "ring-emerald-500" : "ring-transparent"}`}>
+              {top && (
+                <span className="absolute -top-2.5 inline-flex animate-pop items-center gap-0.5 rounded-full bg-emerald-500 px-2 py-0.5 text-[11px] font-bold text-white shadow-brand">
+                  <Crown className="size-3" aria-hidden="true" />
+                  最高
+                </span>
+              )}
+              <p className="line-clamp-2 min-h-8 text-xs font-semibold text-slate-900">{r.label}</p>
+              <span className="mt-1">
+                <ScoreRing score={r.score} size={64} stroke={6} small testId="compare-score" />
+              </span>
+              <p className="mt-1 text-xs text-slate-500">紅燈 {r.redFlags.length}</p>
+            </div>
+          );
+        })}
       </div>
 
-      <h2 className="mt-4 text-lg font-bold text-gray-900">💰 租金與租約</h2>
-      <ul className="mt-2 space-y-3">
+      <SectionTitle icon={Wallet} tone="amber" className="mt-4">
+        租金與租約
+      </SectionTitle>
+      <ul className="stagger mt-3 space-y-3">
         {(
           [
             ["月租金", (r: ViewingResult) => (r.lease ? money(r.lease.monthlyRent) : "—")],
@@ -299,16 +353,13 @@ export function CompareView({ results, checklist, onBack }: { results: ViewingRe
             ["租約紅燈", (r: ViewingResult) => (r.lease ? String(r.lease.red) : "—")],
           ] as const
         ).map(([title, value]) => (
-          <li key={title} className="rounded-2xl bg-white p-4 shadow-sm" aria-label={title}>
-            <p className="text-sm font-medium text-gray-900">{title}</p>
+          <li key={title} className="rounded-3xl bg-white p-4 shadow-card" aria-label={title}>
+            <p className="text-sm font-semibold text-slate-900">{title}</p>
             <div className={`mt-2 grid ${cols} gap-2`}>
               {results.map((r) => {
                 const bad = (title === "租約紅燈" && (r.lease?.red ?? 0) > 0) || (title === "押金" && (r.lease?.depositMonths ?? 0) > 2);
                 return (
-                  <div
-                    key={r.id}
-                    className={`flex min-h-10 items-center justify-center rounded-xl text-sm ${bad ? "bg-red-50 font-semibold text-red-700" : r.lease ? "bg-gray-50 text-gray-800" : "bg-gray-50 text-gray-400"}`}
-                  >
+                  <div key={r.id} className={`${cell} ${bad ? "bg-red-50 font-semibold text-red-700" : r.lease ? "bg-slate-50 text-slate-800" : "bg-slate-50 text-slate-300"}`}>
                     {value(r)}
                   </div>
                 );
@@ -317,19 +368,29 @@ export function CompareView({ results, checklist, onBack }: { results: ViewingRe
           </li>
         ))}
       </ul>
-      {results.some((r) => !r.lease) && <p className="mt-2 text-xs text-gray-400">「—」表示這間還沒做租約健檢。</p>}
+      {results.some((r) => !r.lease) && <p className="mt-2 px-1 text-xs text-slate-400">「—」表示這間還沒做租約健檢。</p>}
 
-      <h2 className="mt-6 text-lg font-bold text-gray-900">🔍 看房清單</h2>
-      <label className="mt-3 flex min-h-11 items-center gap-3 rounded-xl bg-white px-4 text-sm text-gray-700 shadow-sm">
-        <input type="checkbox" className="h-5 w-5 accent-emerald-600" checked={onlyDiff} onChange={(e) => setOnlyDiff(e.target.checked)} />
-        只看回答不同的題目
+      <SectionTitle icon={ClipboardList} tone="emerald">
+        看房清單
+      </SectionTitle>
+      <label className="mt-3 flex min-h-13 cursor-pointer items-center gap-3 rounded-3xl bg-white px-4 text-sm font-medium text-slate-700 shadow-card">
+        <span className="flex-1">只看回答不同的題目</span>
+        <input type="checkbox" className="peer sr-only" checked={onlyDiff} onChange={(e) => setOnlyDiff(e.target.checked)} />
+        <span
+          className="relative h-7 w-12 rounded-full bg-slate-200 transition-colors duration-200 peer-checked:bg-emerald-500 peer-focus-visible:ring-4 peer-focus-visible:ring-emerald-500/20 after:absolute after:top-0.5 after:left-0.5 after:size-6 after:rounded-full after:bg-white after:shadow after:transition-transform after:duration-200 peer-checked:after:translate-x-5"
+          aria-hidden="true"
+        />
       </label>
 
-      {rows.length === 0 && onlyDiff && <p className="mt-3 rounded-2xl bg-white p-4 text-sm text-gray-600 shadow-sm">每一題的回答都一樣。</p>}
+      {rows.length === 0 && onlyDiff && (
+        <Notice tone="emerald" icon={Check}>
+          每一題的回答都一樣。
+        </Notice>
+      )}
       <ul className="mt-3 space-y-3">
         {rows.map((it) => (
-          <li key={it.id} className="rounded-2xl bg-white p-4 shadow-sm" aria-label={it.question}>
-            <p className="text-sm font-medium text-gray-900">{it.question}</p>
+          <li key={it.id} className="animate-enter rounded-3xl bg-white p-4 shadow-card" aria-label={it.question}>
+            <p className="text-sm font-medium text-slate-900">{it.question}</p>
             <div className={`mt-2 grid ${cols} gap-2`}>
               {results.map((r) => {
                 const a = r.answers[it.id] ?? "unknown";
@@ -337,9 +398,9 @@ export function CompareView({ results, checklist, onBack }: { results: ViewingRe
                 return (
                   <div
                     key={r.id}
-                    className={`flex min-h-10 items-center justify-center rounded-xl text-sm ${red ? "bg-red-50 font-semibold text-red-700" : a === "unknown" ? "bg-gray-50 text-gray-400" : "bg-emerald-50 text-emerald-800"}`}
+                    className={`${cell} ${red ? "bg-red-50 font-semibold text-red-700" : a === "unknown" ? "bg-slate-50 text-slate-400" : "bg-emerald-50 text-emerald-800"}`}
                   >
-                    {red ? "🚩 " : ""}
+                    {red && <Flag className="size-3.5" aria-label="紅燈" />}
                     {ANSWER_LABEL[a]}
                   </div>
                 );
@@ -349,8 +410,8 @@ export function CompareView({ results, checklist, onBack }: { results: ViewingRe
         ))}
       </ul>
 
-      <p className="mt-3 text-xs text-gray-400">分數只依勾選的項目計算，不代表房子實際安全程度。</p>
-      <Button variant="ghost" className="mt-4" onClick={onBack}>
+      <p className="mt-3 px-1 text-xs text-slate-400">分數只依勾選的項目計算，不代表房子實際安全程度。</p>
+      <Button variant="ghost" className="mt-6" onClick={onBack} icon={ArrowLeft}>
         回到看房紀錄
       </Button>
       <Disclaimer />
@@ -372,33 +433,41 @@ function LeaseSection({
 }) {
   const lease = viewing.lease;
   return (
-    <div className="mt-4 rounded-2xl bg-white p-4 shadow-sm">
-      <p className="font-bold text-gray-900">📄 這間的租約健檢</p>
+    <Card className="mt-3">
+      <div className="flex items-center gap-3">
+        <IconBadge icon={FileSearch} tone="sky" />
+        <p className="flex-1 font-bold text-slate-900">這間的租約健檢</p>
+        {lease && <span className="text-xs text-slate-400">{formatDate(lease.createdAt)}</span>}
+      </div>
       {lease ? (
         <>
-          <div className="mt-2 flex items-center gap-2">
-            <LeaseBadge lease={lease} />
-            <span className="text-xs text-gray-500">{formatDate(lease.createdAt)}</span>
+          <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+            <Stat label="紅燈" value={String(lease.red)} tone={lease.red ? "red" : "slate"} />
+            <Stat label="月租金" value={lease.monthlyRent === null ? "未寫" : lease.monthlyRent.toLocaleString("zh-TW")} tone="slate" />
+            <Stat label="押金" value={months(lease.depositMonths)} tone={(lease.depositMonths ?? 0) > 2 ? "red" : "slate"} />
           </div>
-          <dl className="mt-2 grid grid-cols-2 gap-1 text-sm">
-            <dt className="text-gray-500">月租金</dt>
-            <dd className="text-right text-gray-900">{money(lease.monthlyRent)}</dd>
-            <dt className="text-gray-500">押金</dt>
-            <dd className="text-right text-gray-900">{months(lease.depositMonths)}</dd>
-          </dl>
-          <Button variant="secondary" className="mt-3" disabled={loading} onClick={() => onOpen(lease.id)}>
+          <Button variant="secondary" className="mt-3" disabled={loading} onClick={() => onOpen(lease.id)} icon={loading ? undefined : ChevronRight}>
             {loading ? "載入中…" : "看租約健檢結果"}
           </Button>
-          {error && <p className="mt-2 text-center text-sm text-red-700">{error}</p>}
+          {error && <ErrorText>{error}</ErrorText>}
         </>
       ) : (
         <>
-          <p className="mt-1 text-sm text-gray-600">還沒檢查這間的租約。拿到租約後拍下來，幫你找出押金、電費、稅金等問題。</p>
-          <LinkButton href={`/lease?viewing=${encodeURIComponent(viewing.id)}`} variant="primary" className="mt-3">
+          <p className="mt-2 text-sm leading-relaxed text-slate-600">還沒檢查這間的租約。拿到租約後拍下來，幫你找出押金、電費、稅金等問題。</p>
+          <LinkButton href={`/lease?viewing=${encodeURIComponent(viewing.id)}`} variant="primary" className="mt-3" icon={FileSearch}>
             幫這間做租約健檢
           </LinkButton>
         </>
       )}
+    </Card>
+  );
+}
+
+function Stat({ label, value, tone }: { label: string; value: string; tone: "red" | "slate" }) {
+  return (
+    <div className={`rounded-2xl px-2 py-2.5 ${tone === "red" ? "bg-red-50" : "bg-slate-50"}`}>
+      <p className={`text-base font-bold tabular-nums ${tone === "red" ? "text-red-700" : "text-slate-900"}`}>{value}</p>
+      <p className={`text-[11px] ${tone === "red" ? "text-red-600" : "text-slate-500"}`}>{label}</p>
     </div>
   );
 }

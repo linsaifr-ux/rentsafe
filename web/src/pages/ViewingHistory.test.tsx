@@ -97,7 +97,8 @@ describe("ViewingHistory", () => {
     expect(screen.getByText("最高")).toBeTruthy();
     expect(screen.getAllByTestId("compare-score").map((e) => e.textContent)).toEqual(["90", "40"]);
     const row = screen.getByRole("listitem", { name: "房間裡有裝住警器嗎？" });
-    expect(within(row).getByText("🚩 否")).toBeTruthy();
+    expect(within(row).getByLabelText("紅燈")).toBeTruthy();
+    expect(within(row).getAllByText("否").length).toBeGreaterThan(0);
     // 押金兩間都答「是」，預設不顯示
     expect(screen.queryByRole("listitem", { name: "押金在兩個月租金以內嗎？" })).toBeNull();
 
@@ -124,7 +125,7 @@ describe("ViewingHistory", () => {
     const c = client();
     render(<ViewingHistory me={me} onMeChange={() => {}} client={c} />);
     fireEvent.click(await screen.findByText("A 套房"));
-    fireEvent.click(await screen.findByRole("button", { name: "🗑 刪除這筆紀錄" }));
+    fireEvent.click(await screen.findByRole("button", { name: "刪除這筆紀錄" }));
     const dialog = screen.getByRole("dialog", { name: "刪除這筆看房紀錄？" });
     expect(within(dialog).getByText(/「A 套房」的.*永久刪除/)).toBeTruthy();
 
@@ -133,7 +134,7 @@ describe("ViewingHistory", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(c.deleteViewing).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole("button", { name: "🗑 刪除這筆紀錄" }));
+    fireEvent.click(screen.getByRole("button", { name: "刪除這筆紀錄" }));
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "刪除" }));
     expect(await screen.findByText("我的看房紀錄")).toBeTruthy();
     expect(c.deleteViewing).toHaveBeenCalledWith("a");
@@ -145,7 +146,7 @@ describe("ViewingHistory", () => {
     const c = { ...client(), deleteViewing: vi.fn(async () => Promise.reject(new Error("x"))) };
     render(<ViewingHistory me={me} onMeChange={() => {}} client={c} />);
     fireEvent.click(await screen.findByText("A 套房"));
-    fireEvent.click(await screen.findByRole("button", { name: "🗑 刪除這筆紀錄" }));
+    fireEvent.click(await screen.findByRole("button", { name: "刪除這筆紀錄" }));
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "刪除" }));
     expect(await within(screen.getByRole("dialog")).findByText("系統暫時出了點問題，請稍後再試。")).toBeTruthy();
   });
@@ -155,7 +156,7 @@ describe("ViewingHistory", () => {
     const row = (await screen.findByText("A 套房")).closest("li")!;
     expect(within(row).getByLabelText("租約紅燈 3")).toBeTruthy();
     expect(within(row).getByLabelText("租約黃燈 1")).toBeTruthy();
-    expect(screen.getByText("📄 只有租約")).toBeTruthy();
+    expect(screen.getByText("只有租約")).toBeTruthy();
     expect(screen.getByText("朋友的租約")).toBeTruthy();
   });
 
@@ -163,13 +164,13 @@ describe("ViewingHistory", () => {
     const c = client();
     render(<ViewingHistory me={me} onMeChange={() => {}} client={c} />);
     fireEvent.click(await screen.findByText("A 套房"));
-    expect(await screen.findByText("📄 這間的租約健檢")).toBeTruthy();
+    expect(await screen.findByText("這間的租約健檢")).toBeTruthy();
     expect(screen.getByText("3 個月")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "看租約健檢結果" }));
     expect(await screen.findByText("租約健檢結果")).toBeTruthy();
     expect(c.leaseDetail).toHaveBeenCalledWith("la");
     fireEvent.click(screen.getByRole("button", { name: "回到「A 套房」" }));
-    expect(await screen.findByText("📄 這間的租約健檢")).toBeTruthy();
+    expect(await screen.findByText("這間的租約健檢")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "回到看房紀錄" }));
 
     fireEvent.click(await screen.findByText("B 頂加"));
@@ -180,7 +181,7 @@ describe("ViewingHistory", () => {
   it("刪除有租約的那間時，確認面板說明會一起刪租約", async () => {
     render(<ViewingHistory me={me} onMeChange={() => {}} client={client()} />);
     fireEvent.click(await screen.findByText("A 套房"));
-    fireEvent.click(await screen.findByRole("button", { name: "🗑 刪除這筆紀錄" }));
+    fireEvent.click(await screen.findByRole("button", { name: "刪除這筆紀錄" }));
     expect(within(screen.getByRole("dialog")).getByText(/看房結果和這間的租約健檢會一起永久刪除/)).toBeTruthy();
   });
 
