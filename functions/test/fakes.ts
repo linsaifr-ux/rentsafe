@@ -3,6 +3,7 @@ import type { LineMessage } from "../src/line/types.js";
 import type { UserDoc, UserRepo } from "../src/users.js";
 import type { ViewingRecord, ViewingRepo } from "../src/viewing/repo.js";
 import type { KbIndex } from "../src/ai/retrieve.js";
+import type { LeaseCheckRecord, LeaseCheckRepo, StoredLeaseCheck } from "../src/lease/repo.js";
 
 export function fakeLine(profiles: Record<string, string> = {}) {
   const replies: Array<{ replyToken: string; messages: LineMessage[] }> = [];
@@ -100,6 +101,42 @@ export function memoryViewingRepo() {
         const r = records.find((x) => x.uid === uid && x.id === id);
         return r ? [{ ...r.rec, id: r.id, createdAt: r.createdAt }] : [];
       });
+    },
+  };
+  return { repo, records };
+}
+
+export function memoryLeaseRepo() {
+  const records: Array<{ uid: string; rec: StoredLeaseCheck }> = [];
+  let seq = 0;
+  const repo: LeaseCheckRepo = {
+    async add(uid, rec: LeaseCheckRecord) {
+      const id = `l${++seq}`;
+      records.push({ uid, rec: { ...rec, id, createdAt: new Date(Date.UTC(2026, 10, 13, 0, seq)).toISOString() } });
+      return id;
+    },
+    async list(uid, limit) {
+      return records
+        .filter((r) => r.uid === uid)
+        .map((r) => r.rec)
+        .reverse()
+        .slice(0, limit);
+    },
+    async get(uid, id) {
+      return records.find((r) => r.uid === uid && r.rec.id === id)?.rec ?? null;
+    },
+    async delete(uid, id) {
+      const i = records.findIndex((r) => r.uid === uid && r.rec.id === id);
+      if (i < 0) return false;
+      records.splice(i, 1);
+      return true;
+    },
+    async deleteByViewing(uid, viewingId) {
+      const before = records.length;
+      for (let i = records.length - 1; i >= 0; i--) {
+        if (records[i]!.uid === uid && records[i]!.rec.viewingId === viewingId) records.splice(i, 1);
+      }
+      return before - records.length;
     },
   };
   return { repo, records };

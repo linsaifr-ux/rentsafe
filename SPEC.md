@@ -153,9 +153,12 @@ users/{uid}/viewings/{id}        # F1 結果
   city, housingType, answers: map, score: number, redFlags: string[], questions: string[], createdAt
 
 users/{uid}/leaseChecks/{id}     # F2 結果（不存原圖）
+  viewingId: string | null       # 屬於哪一間看房紀錄（租屋處）；null＝只有租約
+  label: string                  # 租屋處名稱（有 viewingId 時同該筆；否則使用者填或自動命名）
   fields: map                    # 抽出的欄位（已遮蔽）
-  findings: Finding[]            # {ruleId, level: "red"|"yellow"|"green", title, explanation, citations[]}
-  createdAt
+  findings: Finding[]            # {ruleId, level: "red"|"yellow", title, explanation, detail, quotes[], negotiate, basis[]}
+  passed: {ruleId, title}[]      # 檢查過、沒發現問題的規則
+  readability, promptVersion, latencyMs, createdAt
 
 users/{uid}/cases/{id}           # F4/F6
   scenario: "fire" | "leak" | "no_repair" | "deposit" | "early_termination" | "other"
@@ -314,6 +317,7 @@ Prompt 要點（放 `ai/prompts/answer.v1.ts`）：
 - 輸出：安全分數（0–100）、紅燈清單、當地住警器規定、「要問房東的 5 個問題」。可一鍵把問題複製成訊息。
 - 純規則計分，不呼叫模型（快、穩、可重現）。
 - 租屋處名稱或地址：選填文字欄位（最多 60 字），不使用定位；未填自動命名「縣市＋房型＋日期」。
+- 租屋處＝看房紀錄＋租約健檢（2026-11-13 新增）：租約健檢可指定屬於哪一間看房紀錄；單筆頁顯示該間最新的租約健檢（紅黃燈數，可點開）或「幫這間做租約健檢」；列表顯示租約紅黃燈標籤；沒有對應看房紀錄的租約健檢列為「只有租約」；刪除一間時連同其租約健檢一併刪除（確認面板說明）。比較時加列月租金、押金月數、租約紅燈數（取該間最新的租約健檢）。
 - 看房紀錄與比較（2026-11-12 新增）：「我的看房紀錄」列出每間的名稱、分數、紅燈數、日期；點開看當時結果；勾選 2–3 間並排比較分數、紅燈與各題答案差異；單筆可永久刪除（先確認）。結果以儲存的回答依現行清單重新計算。
 
 ---
@@ -329,7 +333,7 @@ LIFF 拍照或選 1–6 張租約照片（或 1 個 PDF），手機端先壓縮
  → pii.ts：遮蔽身分證字號（/[A-Z][12][0-9]{8}/）、手機（/09\d{2}-?\d{3}-?\d{3}/）、地址門牌、姓名欄位
  → rules.ts：數值規則
  → semantic.ts：語意條款比對（只送遮蔽後的條款文字；模型引用的條款必須是條款原文的子字串，否則丟棄）
- → 合併成 findings，存 leaseChecks（只存遮蔽後欄位與 findings）
+ → 合併成 findings，存 leaseChecks（只存遮蔽後欄位與 findings；可指定屬於哪一間看房紀錄，見第 7 節）
  → LIFF 頁面等待並顯示進度（約 20–40 秒），結果直接顯示在頁面，不另外 push
 ```
 
@@ -479,3 +483,4 @@ LIFF 拍照或選 1–6 張租約照片（或 1 個 PDF），手機端先壓縮
 - 2026-11-12｜Phase 4｜程式完成並部署，自動測試通過驗收範例（新北市頂樓加蓋 → 紅燈＋新北住警器規定），**待手機實機確認**｜`kb/viewing-checklist.yaml` 18 題（引用只來自 kb/laws，測試檢查）、純規則計分、`/api/viewing`、LIFF 頁面；新北市火災預防自治條例第 5、14 條已從新北市法規系統逐字匯入（官方現行版本 111-04-27，SPEC 6.3 所稱 2026 年修正查無）；拍照存證留待 Phase 6
 - 2026-11-12｜Phase 4 追加｜看房健檢加「租屋處名稱或地址」（選填，不用定位）、「我的看房紀錄」、2–3 間並排比較；已部署，**待手機實機確認**｜`GET /api/viewing/history`、`POST /api/viewing/detail`（只能讀自己的紀錄）、`web/src/pages/ViewingHistory.tsx`；隱私政策草稿補上蒐集項目
 - 2026-11-12｜Phase 5｜程式完成並部署；**驗收範例通過**：`demo/sample-lease.pdf` 以真實 Gemini 測得押金、公共電費、稅負三個紅燈＋電費單價黃燈，無誤報，耗時 23 秒；遮蔽測試全過（實測 8 項個資皆遮蔽）｜依 2026-11-12 決定：原圖只在記憶體處理不落地；電費規則改依內政部 113 年修正（當期每度平均電價、不得另收公共電費）。官方依據逐字存 `kb/contract-standard/GL000907.md`（114-04-18 修正），規則引文由測試比對。**待手機實機拍照確認**
+- 2026-11-13｜Phase 4／5 追加｜租屋處：租約健檢可指定屬於哪一間看房紀錄；看房紀錄顯示租約紅黃燈標籤、單筆頁的租約區塊（或「幫這間做租約健檢」）、「只有租約」清單；比較加月租金、押金月數、租約紅燈；刪一間時連同租約一起刪；已部署，**待手機實機確認**｜`/api/lease/detail`、`/api/lease/delete`；leaseChecks 新增 viewingId、label、passed

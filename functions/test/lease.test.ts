@@ -11,10 +11,9 @@ import { handleApi } from "../src/api/router.js";
 import { loadKb } from "../src/kb/load.js";
 import { checkLease, depositMonthsOf, numericChecks, validQuote } from "../src/lease/check.js";
 import { MASK, maskDeep, maskPii } from "../src/lease/pii.js";
-import type { LeaseCheckRecord } from "../src/lease/repo.js";
 import { loadRuleset, semanticRules } from "../src/lease/ruleset.js";
 import { memoryRateLimiter } from "../src/rateLimit.js";
-import { emptyKbIndex, memoryUserRepo, memoryViewingRepo } from "./fakes.js";
+import { emptyKbIndex, memoryLeaseRepo, memoryUserRepo, memoryViewingRepo } from "./fakes.js";
 
 const rs = loadRuleset();
 const STANDARD = readFileSync(fileURLToPath(new URL("../../kb/contract-standard/GL000907.md", import.meta.url)), "utf8");
@@ -250,29 +249,26 @@ describe("checkLease", () => {
 
 describe("API /lease/check", () => {
   function setup(responses: unknown[] = [SAMPLE, SEMANTIC]) {
-    const records: Array<{ uid: string; rec: LeaseCheckRecord }> = [];
     const { llm } = scriptedLlm(responses);
+    const leases = memoryLeaseRepo();
+    const viewings = memoryViewingRepo();
     const deps: ApiDeps = {
       verify: async (t) => {
-        if (t !== "good") throw new AuthError("bad");
-        return { uid: "U1", name: "小美" };
+        if (t === "good") return { uid: "U1", name: "小美" };
+        if (t === "other") return { uid: "U2", name: "阿明" };
+        throw new AuthError("bad");
       },
       users: memoryUserRepo().repo,
       limiter: memoryRateLimiter(),
       kb: emptyKbIndex,
-      viewings: memoryViewingRepo().repo,
-      lease: {
-        llm,
-        repo: {
-          async add(uid, rec) {
-            records.push({ uid, rec });
-            return `l${records.length}`;
-          },
-        },
-      },
+      viewings: viewings.repo,
+      lease: { llm, repo: leases.repo },
     };
-    const call = (body: unknown) => handleApi({ method: "POST", path: "/api/lease/check", headers: { authorization: "Bearer good" }, body }, deps);
-    return { call, records, deps };
+    const api = (method: string, path: string, body?: unknown, token = "good") =>
+      handleApi({ method, path, headers: { authorization: `Bearer ${token}` }, body }, deps);
+    const call = (body: unknown, token = "good") => api("POST", "/api/lease/check", body, token);
+    const records = leases.records;
+    return { call, api, records, deps, viewings };
   }
 
   it("成功：回傳 findings，只存遮蔽後資料", async () => {
@@ -319,4 +315,62 @@ describe("API /lease/check", () => {
     expect(statuses.slice(0, 10).every((s) => s === 200)).toBe(true);
     expect(statuses[10]).toBe(429);
   });
+
+  it("指定看房紀錄：名稱沿用該間；不是自己的看房紀錄回 404；沒指定時自動命名", async () => {
+    const { call, api, records } = setup([SAMPLE, SEMANTIC, SAMPLE, SEMANTIC]);
+    const v = (await api("POST", "/api/viewing", { label: "公館套房", city: null, housingType: "studio", answers: {} })).body as { id: string };
+    const res = await call({ files: [{ mimeType: "image/jpeg", data: "QUJD" }], viewingId: v.id });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ viewingId: v.id, label: "公館套房" });
+    expect(records[0]!.rec.viewingId).toBe(v.id);
+    expect(records[0]!.rec.passed.length).toBeGreaterThan(0);
+
+    expect((await call({ files: [{ mimeType: "image/jpeg", data: "QUJD" }], viewingId: v.id }, "other")).status).toBe(404);
+
+    const solo = await call({ files: [{ mimeType: "image/jpeg", data: "QUJD" }] });
+    expect((solo.body as { label: string; viewingId: null }).label).toMatch(/^租約健檢 \d{1,2}\/\d{1,2}$/);
+    expect((solo.body as { viewingId: null }).viewingId).toBeNull();
+  });
+
+  it("detail 與 delete 只能用在自己的紀錄", async () => {
+    const { call, api } = setup();
+    const { id } = (await call({ files: [{ mimeType: "image/jpeg", data: "QUJD" }] })).body as { id: string };
+    const d = await api("POST", "/api/lease/detail", { id });
+    expect(d.status).toBe(200);
+    expect((d.body as { findings: unknown[] }).findings.length).toBeGreaterThan(0);
+    expect((await api("POST", "/api/lease/detail", { id }, "other")).status).toBe(404);
+    expect((await api("POST", "/api/lease/delete", { id }, "other")).status).toBe(404);
+    expect((await api("POST", "/api/lease/delete", { id })).status).toBe(200);
+    expect((await api("POST", "/api/lease/detail", { id })).status).toBe(404);
+  });
+
+  it("看房紀錄附上該間最新的租約摘要；只有租約的另外列出；刪一間時連同租約一起刪", async () => {
+    const { call, api, records } = setup([SAMPLE, SEMANTIC, SAMPLE, SEMANTIC, SAMPLE, SEMANTIC]);
+    const a = (await api("POST", "/api/viewing", { label: "A", city: null, housingType: "studio", answers: {} })).body as { id: string };
+    const b = (await api("POST", "/api/viewing", { label: "B", city: null, housingType: "studio", answers: {} })).body as { id: string };
+    await call({ files: [{ mimeType: "image/jpeg", data: "QUJD" }], viewingId: a.id });
+    const latest = (await call({ files: [{ mimeType: "image/jpeg", data: "QUJD" }], viewingId: a.id })).body as { id: string };
+    await call({ files: [{ mimeType: "image/jpeg", data: "QUJD" }], label: "朋友的租約" });
+
+    type Hist = {
+      viewings: Array<{ id: string; lease: { id: string; red: number; depositMonths: number } | null }>;
+      leaseOnly: Array<{ label: string; red: number }>;
+    };
+    const hist = (await api("GET", "/api/viewing/history")).body as Hist;
+    const rowA = hist.viewings.find((v) => v.id === a.id)!;
+    expect(rowA.lease?.id).toBe(latest.id);
+    expect(rowA.lease?.red).toBeGreaterThanOrEqual(3);
+    expect(rowA.lease?.depositMonths).toBe(3);
+    expect(hist.viewings.find((v) => v.id === b.id)!.lease).toBeNull();
+    expect(hist.leaseOnly.map((l) => l.label)).toEqual(["朋友的租約"]);
+
+    const detail = (await api("POST", "/api/viewing/detail", { ids: [a.id, b.id] })).body as { viewings: Array<{ lease: { monthlyRent: number } | null }> };
+    expect(detail.viewings[0]!.lease?.monthlyRent).toBe(15000);
+    expect(detail.viewings[1]!.lease).toBeNull();
+
+    const del = await api("POST", "/api/viewing/delete", { id: a.id });
+    expect(del.body).toEqual({ ok: true, leaseDeleted: 2 });
+    expect(records.map((r) => r.rec.label)).toEqual(["朋友的租約"]);
+  });
 });
+

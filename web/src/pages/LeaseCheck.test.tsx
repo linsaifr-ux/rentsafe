@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { ApiError, type LeaseResult, type Me } from "../api.ts";
+import { ApiError, type api, type LeaseResult, type Me } from "../api.ts";
 import { DISCLAIMER_TEXT } from "../components/Disclaimer.tsx";
 import { fitSize, type PreparedFile } from "../lease/prepare.ts";
 import { LeaseCheck } from "./LeaseCheck.tsx";
@@ -12,6 +12,9 @@ const me: Me = { displayName: "小美", city: "新北市", landlordType: "unknow
 const RESULT: LeaseResult = {
   status: "ok",
   id: "l1",
+  viewingId: null,
+  label: "公館套房",
+  createdAt: null,
   readability: "good",
   fields: { monthlyRent: 15000, deposit: 45000, leaseStart: "115年1月1日", leaseEnd: "115年12月31日", electricityRule: null },
   findings: [
@@ -54,8 +57,14 @@ const prepare = vi.fn(async (f: File): Promise<PreparedFile> => ({
   previewUrl: null,
 }));
 
-function setup(leaseCheck = vi.fn(async () => RESULT)) {
-  render(<LeaseCheck me={me} onMeChange={() => {}} client={{ leaseCheck }} prepare={prepare} />);
+const HOMES = [
+  { id: "v1", label: "公館套房", city: "臺北市", housingType: "studio", score: 80, redFlagCount: 1, createdAt: null, lease: null },
+  { id: "v2", label: "景美雅房", city: "臺北市", housingType: "room", score: 60, redFlagCount: 2, createdAt: null, lease: null },
+];
+
+function setup(leaseCheck: typeof api.leaseCheck = vi.fn(async () => RESULT), initialViewingId = "") {
+  const viewingHistory = vi.fn(async () => ({ viewings: HOMES, leaseOnly: [] }));
+  render(<LeaseCheck me={me} onMeChange={() => {}} client={{ leaseCheck, viewingHistory }} prepare={prepare} initialViewingId={initialViewingId} />);
   return { leaseCheck };
 }
 
@@ -84,7 +93,7 @@ describe("LeaseCheck", () => {
     fireEvent.click(await screen.findByRole("button", { name: "開始健檢" }));
 
     expect((await screen.findByTestId("lease-red")).textContent).toBe("1");
-    expect(leaseCheck).toHaveBeenCalledWith([{ mimeType: "image/jpeg", data: "QUJD" }]);
+    expect(leaseCheck).toHaveBeenCalledWith([{ mimeType: "image/jpeg", data: "QUJD" }], {});
     expect(screen.getByTestId("lease-yellow").textContent).toBe("1");
     const card = screen.getByRole("listitem", { name: "要你負擔房屋稅或地價稅" });
     expect(within(card).getByText("「房屋稅、地價稅由承租人負擔」")).toBeTruthy();
@@ -107,6 +116,26 @@ describe("LeaseCheck", () => {
     fireEvent.change(screen.getByTestId("lease-picker"), { target: { files: [file("p1.jpg", "image/jpeg")] } });
     fireEvent.click(await screen.findByRole("button", { name: "開始健檢" }));
     expect(await screen.findByText("分析失敗了，請確認照片清楚後再試一次。")).toBeTruthy();
+  });
+});
+
+describe("LeaseCheck 指定租屋處", () => {
+  it("從看房紀錄進來時預先選好那一間，送出時帶 viewingId", async () => {
+    const { leaseCheck } = setup(undefined, "v2");
+    const select = (await screen.findByLabelText("這是哪一間的租約？")) as HTMLSelectElement;
+    await waitFor(() => expect(select.value).toBe("v2"));
+    expect(screen.queryByLabelText("名稱（選填）")).toBeNull();
+    fireEvent.change(screen.getByTestId("lease-picker"), { target: { files: [file("p1.jpg", "image/jpeg")] } });
+    fireEvent.click(await screen.findByRole("button", { name: "開始健檢" }));
+    await waitFor(() => expect(leaseCheck).toHaveBeenCalledWith([{ mimeType: "image/jpeg", data: "QUJD" }], { viewingId: "v2" }));
+  });
+
+  it("不在看房紀錄裡時可以填名稱", async () => {
+    const { leaseCheck } = setup();
+    fireEvent.change(await screen.findByLabelText("名稱（選填）"), { target: { value: " 朋友的租約 " } });
+    fireEvent.change(screen.getByTestId("lease-picker"), { target: { files: [file("p1.jpg", "image/jpeg")] } });
+    fireEvent.click(await screen.findByRole("button", { name: "開始健檢" }));
+    await waitFor(() => expect(leaseCheck).toHaveBeenCalledWith([{ mimeType: "image/jpeg", data: "QUJD" }], { label: "朋友的租約" }));
   });
 });
 

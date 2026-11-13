@@ -50,6 +50,19 @@ export interface ViewingResult {
   questions: string[];
   warning: string | null;
   fireRule: { city: string | null; national: FireRuleArticle | null; local: FireRuleArticle[]; note: string | null };
+  /** 從看房紀錄讀取時才有：這間最新的租約健檢 */
+  lease?: LeaseSummary | null;
+}
+
+/** 一間租屋處最新的租約健檢摘要 */
+export interface LeaseSummary {
+  id: string;
+  red: number;
+  yellow: number;
+  monthlyRent: number | null;
+  deposit: number | null;
+  depositMonths: number | null;
+  createdAt: string | null;
 }
 
 export interface ViewingSummary {
@@ -60,6 +73,7 @@ export interface ViewingSummary {
   score: number;
   redFlagCount: number;
   createdAt: string | null;
+  lease: LeaseSummary | null;
 }
 
 /** F2 租約健檢（對應 functions/src/lease/check.ts） */
@@ -92,6 +106,10 @@ export type LeaseResult =
   | {
       status: "ok";
       id: string;
+      /** 屬於哪一間看房紀錄；null＝只有租約 */
+      viewingId: string | null;
+      label: string;
+      createdAt: string | null;
       readability: "good" | "partial" | "poor";
       fields: {
         monthlyRent: number | null;
@@ -137,8 +155,12 @@ export const api = {
   viewingChecklist: () => apiFetch<ViewingChecklist>("/viewing/checklist"),
   submitViewing: (body: { label?: string; city: string | null; housingType: string; answers: Record<string, ViewingAnswer> }) =>
     apiFetch<ViewingResult>("/viewing", { method: "POST", body }),
-  leaseCheck: (files: LeaseFile[]) => apiFetch<LeaseResult>("/lease/check", { method: "POST", body: { files } }),
-  viewingHistory: () => apiFetch<{ viewings: ViewingSummary[] }>("/viewing/history"),
+  leaseCheck: (files: LeaseFile[], opts: { viewingId?: string | null; label?: string } = {}) =>
+    apiFetch<LeaseResult>("/lease/check", { method: "POST", body: { files, ...opts } }),
+  leaseDetail: (id: string) => apiFetch<LeaseResult>("/lease/detail", { method: "POST", body: { id } }),
+  deleteLease: (id: string) => apiFetch<{ ok: true }>("/lease/delete", { method: "POST", body: { id } }),
+  viewingHistory: () =>
+    apiFetch<{ viewings: ViewingSummary[]; leaseOnly: Array<LeaseSummary & { label: string }> }>("/viewing/history"),
   deleteViewing: (id: string) => apiFetch<{ ok: true }>("/viewing/delete", { method: "POST", body: { id } }),
   viewingDetail: (ids: string[]) => apiFetch<{ viewings: ViewingResult[] }>("/viewing/detail", { method: "POST", body: { ids } }),
 };

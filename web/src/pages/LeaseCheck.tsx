@@ -1,11 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import { api, errorMessage, type LeaseFinding, type LeaseResult } from "../api.ts";
+import { api, errorMessage, type LeaseFinding, type LeaseResult, type ViewingSummary } from "../api.ts";
 import { Disclaimer } from "../components/Disclaimer.tsx";
-import { BottomBar, Button, SourceChip } from "../components/ui.tsx";
+import { BottomBar, Button, ConfirmSheet, LinkButton, SourceChip } from "../components/ui.tsx";
+import { FIELD, FIELD_LABEL } from "./ViewingCheck.tsx";
 import { MAX_FILES, MAX_TOTAL_BYTES, prepareFile, type PreparedFile } from "../lease/prepare.ts";
 import type { PageProps } from "../router.tsx";
 
-type Client = Pick<typeof api, "leaseCheck">;
+type Client = Pick<typeof api, "leaseCheck" | "viewingHistory">;
+
+/** 網址 ?viewing=ID 時預先選好是哪一間（從看房紀錄點「幫這間做租約健檢」） */
+function viewingFromUrl(): string {
+  return new URLSearchParams(window.location.search).get("viewing") ?? "";
+}
 
 /** 分析中顯示的步驟（依時間輪播，實際進度在後端） */
 export const PROGRESS_STEPS = ["讀取租約內容…", "遮蔽個人資料…", "比對內政部契約規定…", "整理結果…"];
@@ -16,14 +22,29 @@ const LEVEL = {
 } as const;
 
 /** F2 租約健檢（SPEC 8）：拍照或選檔 → 分析 → 紅黃綠燈 */
-export function LeaseCheck({ client = api, prepare = prepareFile }: PageProps & { client?: Client; prepare?: (f: File) => Promise<PreparedFile> }) {
+export function LeaseCheck({
+  client = api,
+  prepare = prepareFile,
+  initialViewingId = viewingFromUrl(),
+}: PageProps & { client?: Client; prepare?: (f: File) => Promise<PreparedFile>; initialViewingId?: string }) {
   const [files, setFiles] = useState<PreparedFile[]>([]);
+  const [homes, setHomes] = useState<ViewingSummary[]>([]);
+  const [viewingId, setViewingId] = useState(initialViewingId);
+  const [label, setLabel] = useState("");
   const [busy, setBusy] = useState<"preparing" | "analyzing" | null>(null);
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<LeaseResult | null>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const pickRef = useRef<HTMLInputElement>(null);
+
+  // 讀看房紀錄，讓使用者選「這是哪一間的租約」；失敗就只當成「只有租約」
+  useEffect(() => {
+    client.viewingHistory().then(
+      (h) => setHomes(h.viewings),
+      () => setHomes([]),
+    );
+  }, [client]);
 
   useEffect(() => {
     if (busy !== "analyzing") return;
@@ -80,7 +101,11 @@ export function LeaseCheck({ client = api, prepare = prepareFile }: PageProps & 
     setBusy("analyzing");
     setError(null);
     try {
-      const r = await client.leaseCheck(files.map((f) => ({ mimeType: f.mimeType, data: f.data })));
+      const known = homes.some((h) => h.id === viewingId);
+      const r = await client.leaseCheck(
+        files.map((f) => ({ mimeType: f.mimeType, data: f.data })),
+        known ? { viewingId } : label.trim() ? { label: label.trim() } : {},
+      );
       setResult(r);
       // 送出後就清掉手機記憶體裡的照片
       files.forEach((f) => f.previewUrl && URL.revokeObjectURL(f.previewUrl));
@@ -111,6 +136,37 @@ export function LeaseCheck({ client = api, prepare = prepareFile }: PageProps & 
     <section>
       <h1 className="text-2xl font-bold text-gray-900">租約健檢</h1>
       <p className="mt-1 text-sm text-gray-600">拍下租約，幫你對照內政部的契約規定，找出押金、電費、稅金等常見問題。</p>
+
+      <div className="mt-4 rounded-2xl bg-white p-4 shadow-sm">
+        <label className={FIELD_LABEL} htmlFor="lease-home">
+          這是哪一間的租約？
+        </label>
+        <select id="lease-home" className={FIELD} value={homes.some((h) => h.id === viewingId) ? viewingId : ""} onChange={(e) => setViewingId(e.target.value)}>
+          <option value="">不在看房紀錄裡（只檢查租約）</option>
+          {homes.map((h) => (
+            <option key={h.id} value={h.id}>
+              {h.label}
+            </option>
+          ))}
+        </select>
+        {homes.some((h) => h.id === viewingId) ? (
+          <p className="mt-1 text-xs text-gray-400">結果會存在這間的看房紀錄裡，可以一起比較。</p>
+        ) : (
+          <>
+            <label className={`${FIELD_LABEL} mt-3`} htmlFor="lease-label">
+              名稱（選填）
+            </label>
+            <input
+              id="lease-label"
+              className={FIELD}
+              placeholder="例如：景美雅房的租約"
+              maxLength={60}
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+            />
+          </>
+        )}
+      </div>
 
       <div className="mt-4 rounded-2xl bg-emerald-50 p-4 text-sm text-emerald-900">
         <p className="font-semibold">🔒 你的租約不會被存下來</p>
@@ -245,7 +301,21 @@ function FindingCard({ f }: { f: LeaseFinding }) {
   );
 }
 
-export function LeaseResultView({ result, onRestart }: { result: LeaseResult; onRestart: () => void }) {
+export function LeaseResultView({
+  result,
+  onRestart,
+  restartLabel = "檢查另一份租約",
+  onDelete,
+}: {
+  result: LeaseResult;
+  onRestart: () => void;
+  restartLabel?: string;
+  /** 從紀錄打開時才有：刪除這筆租約健檢 */
+  onDelete?: () => Promise<void>;
+}) {
+  const [confirming, setConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   if (result.status === "not_lease") {
     return (
       <section>
@@ -270,6 +340,7 @@ export function LeaseResultView({ result, onRestart }: { result: LeaseResult; on
   return (
     <section>
       <h1 className="text-2xl font-bold text-gray-900">租約健檢結果</h1>
+      <p className="mt-1 text-sm text-gray-600">{result.label}</p>
 
       <div className="mt-4 grid grid-cols-3 gap-2 text-center">
         <div className="rounded-2xl bg-red-50 p-3">
@@ -342,10 +413,45 @@ export function LeaseResultView({ result, onRestart }: { result: LeaseResult; on
       )}
 
       <p className="mt-4 text-xs text-gray-400">結果由 AI 讀取租約後依規則比對，可能看錯字。簽約前請再核對原文。</p>
-      <Button variant="ghost" className="mt-4" onClick={onRestart}>
-        檢查另一份租約
-      </Button>
+      <div className="mt-6 space-y-3">
+        {!onDelete && (
+          <LinkButton href="/viewings" variant="secondary">
+            📋 我的看房紀錄
+          </LinkButton>
+        )}
+        <Button variant="ghost" onClick={onRestart}>
+          {restartLabel}
+        </Button>
+        {onDelete && (
+          <Button variant="dangerSoft" onClick={() => setConfirming(true)}>
+            🗑 刪除這份租約健檢
+          </Button>
+        )}
+      </div>
       <Disclaimer />
+      {confirming && onDelete && (
+        <ConfirmSheet
+          title="刪除這份租約健檢？"
+          message={`「${result.label}」的租約健檢結果會永久刪除，無法復原。`}
+          confirmLabel="刪除"
+          busy={deleting}
+          error={deleteError}
+          onConfirm={async () => {
+            setDeleting(true);
+            setDeleteError(null);
+            try {
+              await onDelete();
+            } catch (err) {
+              setDeleteError(errorMessage(err));
+              setDeleting(false);
+            }
+          }}
+          onCancel={() => {
+            setConfirming(false);
+            setDeleteError(null);
+          }}
+        />
+      )}
     </section>
   );
 }

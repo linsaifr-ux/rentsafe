@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { api, errorMessage, type ViewingAnswer, type ViewingChecklist, type ViewingResult } from "../api.ts";
 import { ALL_CITIES } from "../cities.ts";
 import { Disclaimer } from "../components/Disclaimer.tsx";
@@ -170,12 +170,15 @@ export function ViewingResultView({
   onRestart,
   restartLabel = "重新檢查",
   onDelete,
+  extra,
 }: {
   result: ViewingResult;
   onRestart: () => void;
   restartLabel?: string;
   /** 有傳才顯示「刪除這筆紀錄」；回傳 Promise，失敗時丟錯 */
   onDelete?: () => Promise<void>;
+  /** 分數下方的額外區塊（看房紀錄裡放這間的租約健檢） */
+  extra?: ReactNode;
 }) {
   const [copied, setCopied] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -223,6 +226,7 @@ export function ViewingResultView({
       </div>
 
       {result.warning && <p className="mt-3 rounded-2xl bg-amber-50 p-4 text-sm text-amber-800">⚠️ {result.warning}</p>}
+      {extra}
 
       <h2 className="mt-6 text-lg font-bold text-gray-900">🚩 紅燈（{result.redFlags.length}）</h2>
       {result.redFlags.length === 0 ? (
@@ -306,7 +310,11 @@ export function ViewingResultView({
       {confirming && (
         <ConfirmSheet
           title="刪除這筆看房紀錄？"
-          message={`「${result.label}」的回答和結果會永久刪除，無法復原。`}
+          message={
+            result.lease
+              ? `「${result.label}」的看房結果和這間的租約健檢會一起永久刪除，無法復原。`
+              : `「${result.label}」的回答和結果會永久刪除，無法復原。`
+          }
           confirmLabel="刪除"
           busy={deleting}
           error={deleteError}

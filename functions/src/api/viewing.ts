@@ -4,6 +4,7 @@ import { VIEWING } from "../config.js";
 import { ANSWERS, loadChecklist, type Checklist } from "../viewing/checklist.js";
 import { fireAlarmRule } from "../viewing/fireRule.js";
 import type { StoredViewing } from "../viewing/repo.js";
+import { leaseSummary, type LeaseSummary, type StoredLeaseCheck } from "../lease/repo.js";
 import { scoreViewing } from "../viewing/score.js";
 import { HttpError, json, parseBody, type ApiDeps, type Routes } from "./http.js";
 
@@ -21,18 +22,35 @@ const detailSchema = z.object({
   ids: z.array(idSchema).min(1).max(VIEWING.compareMax),
 });
 
+/** 台灣時間的「月/日」，例如 11/13 */
+export function taiwanMonthDay(now: Date): string {
+  return new Intl.DateTimeFormat("zh-TW", { timeZone: "Asia/Taipei", month: "numeric", day: "numeric" }).format(now);
+}
+
 /** 沒填名稱時自動命名：「新北市頂樓加蓋 11/12」（日期用台灣時間） */
 export function autoLabel(checklist: Checklist, city: string | null, housingType: string, now: Date): string {
   const housing = checklist.housingTypes.find((h) => h.id === housingType)?.label ?? "";
-  const date = new Intl.DateTimeFormat("zh-TW", { timeZone: "Asia/Taipei", month: "numeric", day: "numeric" }).format(now);
-  return `${city ?? ""}${housing} ${date}`.trim();
+  return `${city ?? ""}${housing} ${taiwanMonthDay(now)}`.trim();
+}
+
+/** 每間看房紀錄最新的一筆租約健檢摘要；以及沒有對應看房紀錄的租約健檢 */
+async function leaseIndex(uid: string, deps: ApiDeps): Promise<{ byViewing: Map<string, LeaseSummary>; leaseOnly: StoredLeaseCheck[] }> {
+  const byViewing = new Map<string, LeaseSummary>();
+  const leaseOnly: StoredLeaseCheck[] = [];
+  if (!deps.lease) return { byViewing, leaseOnly };
+  // list 是新到舊，所以每間第一個遇到的就是最新的
+  for (const l of await deps.lease.repo.list(uid, VIEWING.historyLimit * 2)) {
+    if (!l.viewingId) leaseOnly.push(l);
+    else if (!byViewing.has(l.viewingId)) byViewing.set(l.viewingId, leaseSummary(l));
+  }
+  return { byViewing, leaseOnly };
 }
 
 /** 依儲存的回答，用現行清單重新算出完整結果（SPEC 7） */
-async function expand(v: StoredViewing, checklist: Checklist, deps: ApiDeps) {
+async function expand(v: StoredViewing, checklist: Checklist, deps: ApiDeps, lease: LeaseSummary | null) {
   const result = scoreViewing(checklist, { housingType: v.housingType, answers: v.answers });
   const fireRule = await fireAlarmRule(deps.kb, v.city);
-  return { id: v.id, label: v.label, city: v.city, housingType: v.housingType, createdAt: v.createdAt, ...result, fireRule };
+  return { id: v.id, label: v.label, city: v.city, housingType: v.housingType, createdAt: v.createdAt, ...result, fireRule, lease };
 }
 
 /** F1 看房健檢（SPEC 7）：純規則計分，不呼叫模型 */
@@ -72,7 +90,7 @@ export const viewingRoutes: Routes = {
 
   /** 我的看房紀錄（新到舊） */
   "GET /viewing/history": async ({ user, deps }) => {
-    const list = await deps.viewings.list(user.uid, VIEWING.historyLimit);
+    const [list, leases] = await Promise.all([deps.viewings.list(user.uid, VIEWING.historyLimit), leaseIndex(user.uid, deps)]);
     return json(200, {
       viewings: list.map((v) => ({
         id: v.id,
@@ -82,7 +100,10 @@ export const viewingRoutes: Routes = {
         score: v.score,
         redFlagCount: v.redFlags.length,
         createdAt: v.createdAt,
+        lease: leases.byViewing.get(v.id) ?? null,
       })),
+      /** 沒有對應看房紀錄的租約健檢（只有租約） */
+      leaseOnly: leases.leaseOnly.map((l) => ({ label: l.label, ...leaseSummary(l) })),
     });
   },
 
@@ -92,13 +113,16 @@ export const viewingRoutes: Routes = {
     const found = await deps.viewings.getMany(user.uid, [...new Set(ids)]);
     if (found.length === 0) throw new HttpError(404, "not_found");
     const checklist = loadChecklist();
-    return json(200, { viewings: await Promise.all(found.map((v) => expand(v, checklist, deps))) });
+    const { byViewing } = await leaseIndex(user.uid, deps);
+    return json(200, { viewings: await Promise.all(found.map((v) => expand(v, checklist, deps, byViewing.get(v.id) ?? null))) });
   },
 
   /** 永久刪除自己的一筆看房紀錄（只能刪自己的） */
   "POST /viewing/delete": async ({ user, body, deps }) => {
     const { id } = parseBody(deleteSchema, body);
     if (!(await deps.viewings.delete(user.uid, id))) throw new HttpError(404, "not_found");
-    return json(200, { ok: true });
+    // 連同這間的租約健檢一起刪（SPEC 7）
+    const leaseDeleted = deps.lease ? await deps.lease.repo.deleteByViewing(user.uid, id) : 0;
+    return json(200, { ok: true, leaseDeleted });
   },
 };
