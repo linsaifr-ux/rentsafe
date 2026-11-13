@@ -4,7 +4,7 @@ import { NavCard } from "../components/ui.tsx";
 
 const LINKS = [
   { href: "/viewing", icon: "🔍", title: "看房健檢", desc: "看房時逐項檢查，找出安全紅燈" },
-  { href: "/viewings", icon: "📋", title: "我的看房紀錄", desc: "比較看過的租屋處" },
+  { href: "/viewings", icon: "📋", title: "我的看房紀錄", desc: "看房、租約健檢結果都在這，可以比較" },
   { href: "/lease", icon: "📄", title: "租約健檢", desc: "拍租約，幫你找出不合理條款" },
   { href: "/evidence", icon: "📸", title: "存證廊", desc: "照片、對話依時間整理成證據" },
   { href: "/emergency", icon: "🆘", title: "出事了", desc: "火災、漏水、押金爭議，一步步處理" },

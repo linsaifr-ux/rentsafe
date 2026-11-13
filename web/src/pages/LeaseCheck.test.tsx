@@ -146,3 +146,10 @@ describe("fitSize", () => {
     expect(fitSize(800, 600)).toEqual({ width: 800, height: 600 });
   });
 });
+
+describe("LeaseCheck 入口", () => {
+  it("表單上方有連到我的看房紀錄的卡片", () => {
+    setup();
+    expect(screen.getByRole("link", { name: /我的看房紀錄/ }).getAttribute("href")).toBe("/viewings");
+  });
+});

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api, errorMessage, type LeaseFinding, type LeaseResult, type ViewingSummary } from "../api.ts";
 import { Disclaimer } from "../components/Disclaimer.tsx";
-import { BottomBar, Button, ConfirmSheet, LinkButton, SourceChip } from "../components/ui.tsx";
+import { BottomBar, Button, ConfirmSheet, LinkButton, NavCard, SourceChip } from "../components/ui.tsx";
 import { FIELD, FIELD_LABEL } from "./ViewingCheck.tsx";
 import { MAX_FILES, MAX_TOTAL_BYTES, prepareFile, type PreparedFile } from "../lease/prepare.ts";
 import type { PageProps } from "../router.tsx";
@@ -136,6 +136,10 @@ export function LeaseCheck({
     <section>
       <h1 className="text-2xl font-bold text-gray-900">租約健檢</h1>
       <p className="mt-1 text-sm text-gray-600">拍下租約，幫你對照內政部的契約規定，找出押金、電費、稅金等常見問題。</p>
+
+      <div className="mt-4">
+        <NavCard href="/viewings" icon="📋" title="我的看房紀錄" desc="做過的租約健檢也在這，可以跟看房結果一起比較" />
+      </div>
 
       <div className="mt-4 rounded-2xl bg-white p-4 shadow-sm">
         <label className={FIELD_LABEL} htmlFor="lease-home">
