@@ -1,0 +1,261 @@
+# 情境急救包（SPEC 10）
+#
+# 每個情境分四段：now（現在）、today（今天）、week（本週）、next（下一步）。
+# 原則：
+# - 這裡只寫「實際要做的事」，不寫法律結論。條文一律由程式依 functions/src/ai/scenario.ts 的
+#   REQUIRED_ARTICLES 從 kb_chunks（官方原文）帶出，這個檔案不寫條號。
+# - 引用外部官方資訊的步驟附 sources（官方網址）；沒有找到官方來源的縣市不列，畫面提示「請查當地消防局」。
+# - key: true 的步驟沒完成時，案件摘要會列在「尚缺資料」。
+# - ask 是「問這一步」帶進法條問答的問題；不能含「現在、正在」等字眼，避免被當成緊急狀況（有測試檢查）。
+# - reviewed: false＝尚未經團隊法律背景成員核對。
+#
+# link 可以是 LIFF 內路徑（/evidence）、tel: 或 #articles（本頁的相關條文）、#fireRule（當地住警器規定）。
+
+- id: fire
+  label: 火災
+  intro: 先顧好自己的安全，其他事情都可以之後再處理。照著下面一步步來就好。
+  reviewed: false
+  wants: [修復房屋, 減免租金, 終止租約, 處理受損的物品, 釐清責任]
+  referrals: [emergency, legal_aid, mediation, dispute_board]
+  stages:
+    now:
+      ask: 租屋處火災之後，我第一時間應該注意什麼？
+      items:
+        - id: safe
+          text: 確認自己和室友都安全，不要回去拿東西
+          key: true
+        - id: call119
+          text: 有火、有煙或有人受傷，撥打 119
+          link: tel:119
+        - id: medical
+          text: 有受傷或吸入濃煙就去看醫生，保留診斷證明和收據
+    today:
+      ask: 租屋處火災之後，我今天應該保存哪些證據？
+      items:
+        - id: photo
+          text: 拍下現場和受損物品，存進存證廊
+          link: /evidence
+          key: true
+        - id: keep_docs
+          text: 把租約、和房東的對話、繳租紀錄截圖存進存證廊
+          link: /evidence
+          key: true
+        - id: notify
+          text: 用文字訊息通知房東發生火災，保留訊息紀錄
+          key: true
+    week:
+      ask: 租屋處火災之後，房東和房客各自要負什麼責任？
+      items:
+        - id: fire_cert
+          text: 向火災發生地的消防局申請火災證明（各縣市流程不同）
+          sources:
+            - { label: 新北市線上申辦, url: "https://service.ntpc.gov.tw/eservice/CaseData.action?itemId=126002" }
+            - { label: 桃園市消防局 火災戶須知, url: "https://www.tyfd.gov.tw/cht/index.php?act=article&code=detail&ids=167&article_id=2986" }
+            - { label: 臺南市消防局 火災證明申請須知, url: "https://119.tainan.gov.tw/cp.aspx?n=25605" }
+            - { label: 高雄市消防局 核發火災證明申請, url: "https://fdkc.kcg.gov.tw/cp.aspx?n=D07AC1D911756D67" }
+          key: true
+        - id: fire_rule
+          text: 查看租屋處所在縣市的住警器規定
+          link: "#fireRule"
+        - id: read_law
+          text: 看一下和火災有關的條文
+          link: "#articles"
+    next:
+      ask: 租屋處火災之後，和房東談不攏可以找誰幫忙？
+      items:
+        - id: summary
+          text: 產生案件摘要，打電話或調解時用
+          link: /case
+        - id: legal_aid
+          text: 打法扶專線諮詢律師（免費）
+          link: tel:024128518
+        - id: mediation
+          text: 需要時向區公所調解委員會申請調解
+
+- id: no_repair
+  label: 房東不修繕
+  intro: 東西壞了、房東一直不修，先把狀況和通知過程留下紀錄，之後不管協商或調解都用得到。
+  reviewed: false
+  wants: [盡快修好, 減免租金, 自己先修再請房東付費, 終止租約]
+  referrals: [legal_aid, tmm, mediation, dispute_board]
+  stages:
+    now:
+      ask: 租屋處東西壞了房東不修，會有危險的話要先怎麼處理？
+      items:
+        - id: danger
+          text: 有漏電、瓦斯味或結構危險時，先遠離並撥 119
+          link: tel:119
+    today:
+      ask: 房東不修繕的話，我要保存哪些證據？
+      items:
+        - id: photo
+          text: 拍下損壞的狀況，存進存證廊
+          link: /evidence
+          key: true
+        - id: notify
+          text: 用文字訊息告訴房東要修哪裡，請他回覆修繕時間
+          key: true
+        - id: check_lease
+          text: 翻租約，看有沒有寫修繕由誰負責
+    week:
+      ask: 已經通知房東修繕但他一直不修，我可以怎麼做？
+      items:
+        - id: follow_up
+          text: 房東沒回應，再用文字訊息給一個合理期限催他修，保留紀錄
+          key: true
+        - id: receipts
+          text: 想自己先修的話，先看條文和房東的回覆；修了就保留估價單和收據
+        - id: read_law
+          text: 看一下和修繕有關的條文
+          link: "#articles"
+    next:
+      ask: 房東不修繕，和房東談不攏可以找誰幫忙？
+      items:
+        - id: summary
+          text: 產生案件摘要，打電話或調解時用
+          link: /case
+        - id: legal_aid
+          text: 打法扶專線諮詢律師（免費）
+          link: tel:024128518
+        - id: mediation
+          text: 需要時向區公所調解委員會申請調解
+
+- id: leak
+  label: 漏水
+  intro: 先把水和電處理好，避免損失擴大，再把漏水狀況和通知房東的過程留下紀錄。
+  reviewed: false
+  wants: [盡快修好, 處理受損的物品, 減免租金, 終止租約]
+  referrals: [legal_aid, tmm, mediation, dispute_board]
+  stages:
+    now:
+      ask: 租屋處漏水之後，要先怎麼避免損失擴大？
+      items:
+        - id: power
+          text: 漏水靠近插座或電器時，先關掉電源
+        - id: move
+          text: 把電腦、衣物等物品移開，接水或墊毛巾
+    today:
+      ask: 租屋處漏水的話，我要保存哪些證據？
+      items:
+        - id: photo
+          text: 拍照或錄影漏水位置和受損物品，存進存證廊
+          link: /evidence
+          key: true
+        - id: notify
+          text: 用文字訊息通知房東漏水，請他回覆處理時間
+          key: true
+    week:
+      ask: 已經通知房東漏水但他一直不修，我可以怎麼做？
+      items:
+        - id: follow_up
+          text: 房東沒回應，再用文字訊息給一個合理期限催他修，保留紀錄
+          key: true
+        - id: receipts
+          text: 物品受損或自己找人處理的話，保留估價單和收據
+        - id: read_law
+          text: 看一下和修繕有關的條文
+          link: "#articles"
+    next:
+      ask: 租屋處漏水，和房東談不攏可以找誰幫忙？
+      items:
+        - id: summary
+          text: 產生案件摘要，打電話或調解時用
+          link: /case
+        - id: legal_aid
+          text: 打法扶專線諮詢律師（免費）
+          link: tel:024128518
+        - id: mediation
+          text: 需要時向區公所調解委員會申請調解
+
+- id: deposit
+  label: 押金不退
+  intro: 押金爭議最常卡在「證據不夠」。先把付款紀錄、退租時的房屋狀況和房東的說法整理好。
+  reviewed: false
+  wants: [全額退還押金, 說明扣款項目, 部分退還]
+  referrals: [legal_aid, tmm, mediation, dispute_board]
+  stages:
+    now:
+      ask: 房東不退押金的話，我要先整理哪些資料？
+      items:
+        - id: paid_proof
+          text: 找出付押金的收據或轉帳紀錄，存進存證廊
+          link: /evidence
+          key: true
+        - id: lease_terms
+          text: 翻租約，看押金金額和退還的約定
+    today:
+      ask: 房東說要扣押金，我可以請房東說明什麼？
+      items:
+        - id: ask_reason
+          text: 用文字訊息請房東說明扣款項目、金額和退款日期
+          key: true
+        - id: condition
+          text: 把退租時的房屋照片或影片存進存證廊（沒有就把入住時的也找出來）
+          link: /evidence
+          key: true
+    week:
+      ask: 房東一直不退押金，我可以怎麼做？
+      items:
+        - id: follow_up
+          text: 房東沒回應，再用文字訊息給一個合理期限，保留紀錄
+          key: true
+        - id: read_law
+          text: 看一下和押金有關的條文
+          link: "#articles"
+    next:
+      ask: 房東不退押金，可以找誰幫忙？
+      items:
+        - id: summary
+          text: 產生案件摘要，打電話或調解時用
+          link: /case
+        - id: legal_aid
+          text: 打法扶專線諮詢律師（免費）
+          link: tel:024128518
+        - id: mediation
+          text: 需要時向區公所調解委員會或縣市不動產糾紛調處委員會申請
+
+- id: early_termination
+  label: 提前解約
+  intro: 想提前搬走，先看租約怎麼寫，再用文字和房東談，過程都留下紀錄。
+  reviewed: false
+  wants: [順利解約不付違約金, 確認違約金金額, 拿回押金]
+  referrals: [legal_aid, tmm, mediation]
+  stages:
+    now:
+      ask: 想提前解約的話，要先看租約的哪些地方？
+      items:
+        - id: lease_terms
+          text: 翻租約，看有沒有提前終止的約定、要提前多久通知、違約金怎麼算
+          key: true
+    today:
+      ask: 想提前解約，通知房東時要注意什麼？
+      items:
+        - id: notify
+          text: 用文字訊息通知房東想提前解約和預計搬出日期，保留紀錄
+          key: true
+        - id: lease_photo
+          text: 把租約拍照存進存證廊
+          link: /evidence
+    week:
+      ask: 提前解約搬走前，要怎麼避免押金爭議？
+      items:
+        - id: handover
+          text: 搬出前和房東一起點交，拍照錄影存進存證廊
+          link: /evidence
+          key: true
+        - id: deposit
+          text: 用文字和房東確認押金退還的方式和日期
+        - id: read_law
+          text: 看一下和提前終止租約有關的條文
+          link: "#articles"
+    next:
+      ask: 提前解約和房東談不攏，可以找誰幫忙？
+      items:
+        - id: summary
+          text: 產生案件摘要，打電話或調解時用
+          link: /case
+        - id: legal_aid
+          text: 打法扶專線諮詢律師（免費）
+          link: tel:024128518
+        - id: mediation
+          text: 需要時向區公所調解委員會申請調解

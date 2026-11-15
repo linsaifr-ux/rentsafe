@@ -41,3 +41,21 @@ export function openExternal(url: string): void {
   if (liff.isInClient()) liff.openWindow({ url, external: true });
   else window.open(url, "_blank", "noopener");
 }
+
+/**
+ * 「問這一步」：把問題當成使用者的訊息送進聊天室，交給法條問答回覆，再關掉 LIFF。
+ * 只有在 LINE 裡、從和官方帳號的聊天室開啟時才送得出去（需要 chat_message.write 權限）；
+ * 送不出去回傳 false，畫面改成請使用者複製問題。
+ */
+export async function askInChat(text: string): Promise<boolean> {
+  try {
+    if (!liff.isInClient()) return false;
+    const ctx = liff.getContext();
+    if (!ctx || ctx.type !== "utou") return false;
+    await liff.sendMessages([{ type: "text", text }]);
+    liff.closeWindow();
+    return true;
+  } catch {
+    return false;
+  }
+}

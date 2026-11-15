@@ -167,8 +167,14 @@ users/{uid}/leaseChecks/{id}     # F2 結果（不存原圖）
   readability, promptVersion, latencyMs, createdAt
 
 users/{uid}/cases/{id}           # F4/F6
-  scenario: "fire" | "leak" | "no_repair" | "deposit" | "early_termination" | "other"
-  answers: map, checklistDone: string[], summary: CaseSummary | null, createdAt, updatedAt
+  scenario: "fire" | "leak" | "no_repair" | "deposit" | "early_termination"
+  answers: {occurredOn, city, landlordType, story（已遮蔽）, wants[]}
+  checklistDone: string[]        # 「stage.itemId」，例如 today.photo
+  doneAt: map                    # 每個步驟第一次完成的時間（摘要時間軸用）
+  evidenceIds: string[]          # 使用者選進案件的存證
+  summary: CaseSummary | null, createdAt, updatedAt
+
+caseExports/{token}              # 案件摘要 PDF 的 10 分鐘下載連結（同 evidenceExports）
 
 users/{uid}/qa/{id}              # F5 紀錄（供除錯與評估；使用者可刪）
   question, answer, citations[], referred: boolean, latencyMs, promptVersion, createdAt
@@ -208,8 +214,8 @@ kb_chunks/{id}                   # 知識庫（只有後端可讀寫）
 
 - 前端 `liff.getIDToken()` → 每個請求帶 `Authorization: Bearer <idToken>`。
 - 後端 `api/auth.ts` 呼叫 LINE 的 verify endpoint 驗證 ID token，取得 `sub` 作為 uid。**不相信前端傳的 userId。**
-- 所有 endpoint 都要限流：每位使用者每分鐘 30 次（存證廊讀照片、縮圖另計，每分鐘 120 次），超過回 429 `rate_limited`，畫面顯示「等一分鐘再試」；每天 F5 問答 50 次、F2 租約健檢 10 次、F3 存證 200 筆、證據清單匯出 20 次，超過回 429 `daily_limit`，畫面顯示「明天再試」。
-- 例外：證據清單 PDF 的下載連結（`GET /api/evidence/download/{token}`）在外部瀏覽器開啟，沒有 LIFF 登入，改用 10 分鐘有效的隨機 token 驗證。
+- 所有 endpoint 都要限流：每位使用者每分鐘 30 次（存證廊讀照片、縮圖另計，每分鐘 120 次），超過回 429 `rate_limited`，畫面顯示「等一分鐘再試」；每天 F5 問答 50 次、F2 租約健檢 10 次、F3 存證 200 筆、證據清單匯出 20 次、案件摘要匯出 20 次，超過回 429 `daily_limit`，畫面顯示「明天再試」。
+- 例外：證據清單與案件摘要 PDF 的下載連結（`GET /api/evidence/download/{token}`、`GET /api/cases/download/{token}`）在外部瀏覽器開啟，沒有 LIFF 登入，改用 10 分鐘有效的隨機 token 驗證。
 
 ---
 
@@ -389,7 +395,9 @@ LIFF 拍照或選 1–6 張租約照片（或 1 個 PDF），手機端先壓縮
   - 今天：拍攝現場與損失物品；保存租約、房東對話、繳租紀錄（直接存進存證廊）。
   - 本週：向消防局申請火災相關證明文件；查詢當地住警器規定；了解民法 423、424、434 條。
   - 下一步：產生案件摘要（F6）；法扶專線；區公所調解。
-- 每段可以「問這一步」→ 帶情境進 F5。
+- 每段可以「問這一步」→ 帶情境進 F5：用 `liff.sendMessages` 把該段的問題當成使用者訊息送進聊天室（LIFF 需開 `chat_message.write` 權限）；不在聊天室開啟時改成複製問題。問題不可含「現在、正在」等字眼，以免被當成緊急狀況（有測試檢查）。
+- `emergency-flows.yaml` 只寫要做的事，不寫條號；相關條文由 `REQUIRED_ARTICLES`（SPEC 5.3）從知識庫帶出官方原文，查不到的不列。火災情境另顯示當地住警器規定。
+- 「申請火災證明」附各縣市消防局官方頁面（已找到新北、桃園、臺南、高雄），其他縣市請使用者查當地消防局。
 
 ---
 
@@ -398,6 +406,8 @@ LIFF 拍照或選 1–6 張租約照片（或 1 個 PDF），手機端先壓縮
 - 輸入：cases 的答案、勾選、相關 evidence、F5 問答紀錄。
 - 輸出（一頁）：基本事實（時間、地點縣市、房東類型）、時間軸、已有證據、可能相關條文（只列 citeCheck 通過的）、使用者想要的結果、尚缺資料。**不寫勝敗評估。**
 - 產生 PDF ＋ 可複製文字，方便打電話或帶去調解時使用。
+- 摘要完全由程式組合，不呼叫模型：條文只來自知識庫（情境必帶條文＋問答紀錄中 citeCheck 最終通過且未降級的引用）；問答問題列進時間軸前先遮蔽個資。
+- 轉介依情境列出；房東是業者時另加消費者服務專線 1950。
 - 轉介名單（`kb/referrals.yaml`，每筆附來源與查證日期）：
 
 | 代號 | 單位 | 聯絡 | 備註 |
@@ -499,3 +509,6 @@ LIFF 拍照或選 1–6 張租約照片（或 1 個 PDF），手機端先壓縮
 - 2026-11-15｜修正｜問法條在需要轉介時整則回覆被 LINE 拒收（carousel 內 bubble 大小不一致：回答 giga、轉介 kilo），改成一致並加測試；回答卡、緊急卡、歡迎卡、存證卡都已用 LINE validate API 驗證格式。已部署 lineWebhook
 - 2026-11-15｜修正｜每分鐘限流 10 → 30 次；每日上限改回 429 `daily_limit`，畫面顯示「明天再試」，與每分鐘限流區分（SPEC 4.2 同步）。證據清單 PDF 頁尾觸發自動換頁多出 2 頁空白，修正並加頁數測試。已部署
 - 2026-11-15｜Phase 6｜**已驗收**：手機實機確認聊天室傳圖收到已存證卡、改分類、`#存證` 文字紀錄、存證廊時間軸與編輯、證據清單 PDF（縮圖、SHA-256、無空白頁）皆正常。看房健檢拍照存證（SPEC 7）尚未接上
+- 2026-11-15｜Phase 7｜程式完成並部署（functions、Hosting），自動測試通過（後端 233、前端 40），**待手機實機驗收**：火災情境從頭走到摘要不卡關｜`kb/emergency-flows.yaml` 五個情境四段清單（`reviewed: false`，待法律背景成員核對）、案件勾選與資料、選證據、相關條文（知識庫原文）、問這一步（liff.sendMessages，需開 chat_message.write）、案件摘要頁＋可複製文字＋PDF（純規則，不呼叫模型）
+- 2026-11-15｜Phase 3 修正｜緊急偵測：「前陣子／昨天…發生火災」又在問規定時（即使有「現在不能住」）改交一般問答；「火災了」不再一律視為緊急；「剛剛又冒煙」等明確正在發生仍為緊急
+- 2026-11-16｜Phase 7｜**已驗收**：手機實機確認火災情境從頭走到摘要不卡關（勾選步驟、案件資料、選證據、問這一步、複製文字、下載 PDF）

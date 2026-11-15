@@ -13,12 +13,15 @@ export interface SafetyResult {
   kind: EmergencyKind | null;
 }
 
-const NOW = /(現在|正在|剛剛|剛才|目前|還在|快要|一直|好多|很多|救命|怎麼辦[!！]*$)/;
-const PAST = /(上個?月|上週|上禮拜|去年|前幾天|幾天前|之前|以前|那時候|當時|已經滅|撲滅|燒完|事後|後來)/;
+/** 明確「正在發生」：即使提到過去的事件，也當成緊急（例如「上次失火，剛剛又冒煙」） */
+const STRONG_NOW = /(正在|剛剛|剛才|還在|快要|又(著火|起火|失火|冒煙|有煙)|救命|怎麼辦[!！]*$)/;
+/** 較弱的時間詞：「現在房子不能住」這類描述後續狀態的句子也會出現 */
+const WEAK_NOW = /(現在|目前|一直|好多|很多)/;
+const PAST = /(上個?月|上週|上禮拜|上次|那次|去年|前陣子|前一陣子|前幾天|幾天前|幾週前|個月前|前天|昨天|之前|先前|以前|那時候|當時|發生過|已經滅|撲滅|燒完|事後|後來)/;
 
 const RULES: Array<{ kind: EmergencyKind; re: RegExp; needsNow: boolean }> = [
   // 明確求救：一律視為緊急
-  { kind: "fire", re: /(救命.*(火|煙))|((火|煙).*救命)|(燒起來了)|(火燒(房|屋|厝))|(火災了)/, needsNow: false },
+  { kind: "fire", re: /(救命.*(火|煙))|((火|煙).*救命)|(燒起來了)|(火燒(房|屋|厝))/, needsNow: false },
   { kind: "injury", re: /救命|(快要?死了)|(不能呼吸)|(喘不過氣)/, needsNow: false },
   { kind: "threat", re: /(拿(刀|棍|球棒))|(要殺)|(要打我)|(闖進(來|我))|(被打了?)/, needsNow: false },
   // 需要「正在發生」的字眼
@@ -29,19 +32,24 @@ const RULES: Array<{ kind: EmergencyKind; re: RegExp; needsNow: boolean }> = [
 ];
 
 /** 一般法律問題的線索：有這些字眼又沒有「正在發生」的時間詞時，不當成緊急 */
-const QUESTION = /(之後|後來|賠|責任|押金|租金|契約|租約|可以|嗎|怎麼算|規定|房東要|違約)/;
+const QUESTION = /(之後|後來|賠|責任|押金|租金|契約|租約|可以|嗎|怎麼算|規定|房東要|房東應該|違約|費用|負擔|支付|住宿|飯店|不能住)/;
 
 export function detectEmergency(text: string): SafetyResult {
   const t = text.replace(/\s+/g, "");
-  const now = NOW.test(t);
+  const strongNow = STRONG_NOW.test(t);
+  const weakNow = WEAK_NOW.test(t);
   const past = PAST.test(t);
+  const question = QUESTION.test(t);
   for (const r of RULES) {
     if (!r.re.test(t)) continue;
-    if (!r.needsNow || now) return { emergency: true, kind: r.kind };
+    if (!r.needsNow || strongNow) return { emergency: true, kind: r.kind };
+    // 提到過去的事件又在問規定（「前陣子火災，現在不能住，房東要負擔嗎」）：交給一般問答
+    if (past && question) continue;
+    if (weakNow) return { emergency: true, kind: r.kind };
     if (past) continue; // 已經過去的事件
     // 沒有時間線索：被鎖在外面需要明確的「現在」；其他情況除非看起來是一般法律問題，否則當成緊急
     if (r.kind === "locked_out") continue;
-    if (QUESTION.test(t)) continue;
+    if (question) continue;
     return { emergency: true, kind: r.kind };
   }
   return { emergency: false, kind: null };

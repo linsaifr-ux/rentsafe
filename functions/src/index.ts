@@ -29,6 +29,7 @@ import { firestoreLeaseCheckRepo } from "./lease/repo.js";
 import { firestoreDownloadTokenRepo, firestoreEvidenceRepo } from "./evidence/repo.js";
 import { saveFromLine, setCategoryFromLine } from "./evidence/save.js";
 import { firebaseBlobStore } from "./evidence/store.js";
+import { firestoreCaseRepo } from "./cases/repo.js";
 
 initializeApp();
 setGlobalOptions({ region: REGION, maxInstances: 10 });
@@ -48,6 +49,7 @@ export const api = onRequest({ cors: false, secrets: [GEMINI_API_KEY], timeoutSe
         viewings: firestoreViewingRepo(db),
         lease: { llm: geminiLlm(GEMINI_API_KEY.value(), MODELS.vision), repo: firestoreLeaseCheckRepo(db) },
         evidence: { repo: firestoreEvidenceRepo(db), store: firebaseBlobStore(getStorage().bucket()), tokens: firestoreDownloadTokenRepo(db) },
+        cases: { repo: firestoreCaseRepo(db), tokens: firestoreDownloadTokenRepo(db, "caseExports"), qa: firestoreQaLog(db) },
         log: (msg, data) => logger.error(msg, data),
       },
     );

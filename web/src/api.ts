@@ -220,6 +220,105 @@ export const api = {
     apiFetch<{ url: string; count: number; truncated: boolean }>("/evidence/export", { method: "POST", body: { category } }),
 };
 
+/* ───────────── 急救包與案件摘要（SPEC 10、11） ───────────── */
+
+export type CaseScenario = "fire" | "no_repair" | "leak" | "deposit" | "early_termination";
+export type CaseStage = "now" | "today" | "week" | "next";
+export type LandlordType = "individual" | "business" | "unknown";
+
+export interface FlowItem {
+  id: string;
+  text: string;
+  link?: string;
+  key?: boolean;
+  sources?: Array<{ label: string; url: string }>;
+}
+
+export interface Flow {
+  id: CaseScenario;
+  label: string;
+  intro: string;
+  wants: string[];
+  stages: Record<CaseStage, { ask: string; items: FlowItem[] }>;
+}
+
+export interface CaseAnswers {
+  occurredOn: string | null;
+  city: string | null;
+  landlordType: LandlordType;
+  story: string;
+  wants: string[];
+}
+
+export interface CaseBrief {
+  id: string;
+  scenario: CaseScenario;
+  label: string;
+  done: number;
+  total: number;
+  hasSummary: boolean;
+  updatedAt: string;
+}
+
+export interface CaseFull extends CaseBrief {
+  answers: CaseAnswers;
+  checklistDone: string[];
+  evidenceIds: string[];
+  createdAt: string;
+}
+
+export interface CaseArticle {
+  lawName: string;
+  articleNo: string;
+  text: string;
+  sourceUrl: string;
+  scope: string;
+}
+
+export interface CaseReferral {
+  id: string;
+  name: string;
+  contact: string;
+  hours: string | null;
+  note: string;
+  url: string | null;
+}
+
+export interface CaseDetail {
+  case: CaseFull;
+  articles: CaseArticle[];
+  fireRule: ViewingResult["fireRule"] | null;
+  referrals: CaseReferral[];
+}
+
+export interface CaseSummaryData {
+  generatedAt: string;
+  scenario: CaseScenario;
+  scenarioLabel: string;
+  facts: { occurredOn: string | null; city: string | null; landlord: string; story: string };
+  timeline: Array<{ at: string; text: string }>;
+  evidence: Array<{ id: string; occurredAt: string; type: string; category: string; text: string; sha256: string }>;
+  articles: CaseArticle[];
+  wants: string[];
+  missing: string[];
+  referrals: Array<{ name: string; contact: string; hours: string | null; note: string }>;
+  disclaimer: string;
+}
+
+export const caseApi = {
+  flows: () => apiFetch<{ stages: Array<{ id: CaseStage; label: string }>; flows: Flow[] }>("/cases/flows"),
+  list: () => apiFetch<{ cases: CaseBrief[] }>("/cases/list", { method: "POST", body: {} }),
+  open: (scenario: CaseScenario) => apiFetch<{ case: CaseFull }>("/cases/open", { method: "POST", body: { scenario } }),
+  get: (id: string) => apiFetch<CaseDetail>("/cases/get", { method: "POST", body: { id } }),
+  update: (body: { id: string; answers?: CaseAnswers; checklistDone?: string[]; evidenceIds?: string[] }) =>
+    apiFetch<{ case: CaseFull }>("/cases/update", { method: "POST", body }),
+  remove: (id: string) => apiFetch<{ ok: true }>("/cases/delete", { method: "POST", body: { id } }),
+  summary: (id: string) => apiFetch<{ summary: CaseSummaryData; text: string }>("/cases/summary", { method: "POST", body: { id } }),
+  exportPdf: (id: string) => apiFetch<{ url: string }>("/cases/export", { method: "POST", body: { id } }),
+  evidenceList: () => api.evidenceList(),
+};
+export type CaseClient = typeof caseApi;
+
 /** 給使用者看的錯誤訊息 */
 export function errorMessage(err: unknown): string {
   if (err instanceof ApiError) {
@@ -227,6 +326,7 @@ export function errorMessage(err: unknown): string {
     if (err.status === 429 && err.code === "daily_limit") return "今天的使用次數已經用完了，明天再試。";
     if (err.status === 429) return "操作太頻繁了，請等一分鐘再試。";
     if (err.status === 404) return "找不到這筆紀錄。";
+    if (err.status === 409 && err.code === "too_many_cases") return "案件太多了，請先刪掉不需要的案件。";
     if (err.status === 413) return "檔案太大了，請少選幾張或改用照片。";
     if (err.status === 502) return "分析失敗了，請確認照片清楚後再試一次。";
   }

@@ -21,6 +21,7 @@ describe("config", () => {
       pushPerUserPerDay: 3,
       evidencePerUserPerDay: 200,
       evidenceExportPerUserPerDay: 20,
+      caseExportPerUserPerDay: 20,
       qaGlobalPerDay: 1000,
     });
   });

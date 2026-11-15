@@ -91,8 +91,9 @@ export function firestoreEvidenceRepo(db: Firestore): EvidenceRepo {
   };
 }
 
-export function firestoreDownloadTokenRepo(db: Firestore): DownloadTokenRepo {
-  const col = db.collection("evidenceExports");
+/** collection：證據清單用 evidenceExports，案件摘要用 caseExports */
+export function firestoreDownloadTokenRepo(db: Firestore, collection = "evidenceExports"): DownloadTokenRepo {
+  const col = db.collection(collection);
   return {
     async create(rec) {
       const token = newToken();

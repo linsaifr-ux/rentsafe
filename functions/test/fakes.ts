@@ -7,6 +7,7 @@ import type { DownloadTokenRepo, EvidenceRepo } from "../src/evidence/repo.js";
 import type { StoredEvidence } from "../src/evidence/model.js";
 import type { BlobStore } from "../src/evidence/store.js";
 import type { LeaseCheckRecord, LeaseCheckRepo, StoredLeaseCheck } from "../src/lease/repo.js";
+import type { CaseRepo, StoredCase } from "../src/cases/repo.js";
 
 export function fakeLine(profiles: Record<string, string> = {}, contents: Record<string, ContentResult> = {}) {
   const replies: Array<{ replyToken: string; messages: LineMessage[] }> = [];
@@ -213,4 +214,61 @@ export function memoryTokenRepo() {
     },
   };
   return { repo, tokens };
+}
+
+export function memoryCaseRepo() {
+  const records = new Map<string, StoredCase>(); // key: uid/id
+  let seq = 0;
+  const repo: CaseRepo = {
+    async add(uid, rec, now) {
+      const c: StoredCase = { ...rec, id: `c${++seq}`, createdAt: now, updatedAt: now };
+      records.set(`${uid}/${c.id}`, c);
+      return c;
+    },
+    async list(uid, limit) {
+      return [...records.entries()]
+        .filter(([k]) => k.startsWith(`${uid}/`))
+        .map(([, r]) => r)
+        .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+        .slice(0, limit);
+    },
+    async get(uid, id) {
+      return records.get(`${uid}/${id}`) ?? null;
+    },
+    async update(uid, id, patch, now) {
+      const cur = records.get(`${uid}/${id}`);
+      if (!cur) return null;
+      const next = { ...cur, ...patch, updatedAt: now };
+      records.set(`${uid}/${id}`, next);
+      return next;
+    },
+    async delete(uid, id) {
+      return records.delete(`${uid}/${id}`);
+    },
+  };
+  return { repo, records };
+}
+
+/** 只有指定條文的知識庫 */
+export function articlesKbIndex(chunks: Array<{ lawName: string; articleNo: string; text: string; scope?: string }>): KbIndex {
+  const toChunk = (c: (typeof chunks)[number]) => ({
+    id: `${c.lawName}-${c.articleNo}`,
+    lawName: c.lawName,
+    articleNo: c.articleNo,
+    article: `第 ${c.articleNo} 條`,
+    text: c.text,
+    plain: "",
+    plainReviewed: false,
+    scope: c.scope ?? "national",
+    sourceUrl: `https://law.moj.gov.tw/test/${encodeURIComponent(c.lawName)}/${c.articleNo}`,
+    distance: null,
+  });
+  return {
+    nearest: async () => [],
+    byArticle: async (lawName, articleNo, scope) => {
+      const c = chunks.find((x) => x.lawName === lawName && x.articleNo === articleNo && (x.scope ?? "national") === scope);
+      return c ? toChunk(c) : null;
+    },
+    byScope: async (scope) => chunks.filter((x) => (x.scope ?? "national") === scope).map(toChunk),
+  };
 }

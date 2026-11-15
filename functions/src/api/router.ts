@@ -6,8 +6,9 @@ import { meRoutes } from "./me.js";
 import { viewingRoutes } from "./viewing.js";
 import { leaseRoutes } from "./lease.js";
 import { evidenceRoutes, handleEvidenceDownload } from "./evidence.js";
+import { caseRoutes, handleCaseDownload } from "./cases.js";
 
-const routes: Routes = { ...meRoutes, ...viewingRoutes, ...leaseRoutes, ...evidenceRoutes };
+const routes: Routes = { ...meRoutes, ...viewingRoutes, ...leaseRoutes, ...evidenceRoutes, ...caseRoutes };
 
 /** 正規化路徑：Hosting rewrite 傳進來是 /api/xxx，直接打 function 是 /xxx */
 export function normalizePath(path: string): string {
@@ -21,6 +22,8 @@ export async function handleApi(req: ApiRequest, deps: ApiDeps): Promise<ApiResp
   // 證據清單 PDF 下載連結：在外部瀏覽器開啟，用連結裡的 token 驗證
   const download = await handleEvidenceDownload(req.method, path, deps);
   if (download) return download;
+  const caseDownload = await handleCaseDownload(req.method, path, deps);
+  if (caseDownload) return caseDownload;
 
   const handler = routes[`${req.method} ${path}`];
   if (!handler) return json(404, { error: "not_found" });

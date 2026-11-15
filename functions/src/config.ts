@@ -83,6 +83,19 @@ export const EVIDENCE = {
   contentRetryMs: 700,
 } as const;
 
+/** F4 情境急救包、F6 案件摘要（SPEC 10、11） */
+export const CASES = {
+  /** 每人最多保留幾個案件 */
+  maxPerUser: 20,
+  /** 經過簡述的字數上限 */
+  storyMaxLength: 800,
+  /** 摘要最多列幾筆證據、幾則問答 */
+  evidenceMax: 40,
+  qaMax: 5,
+  /** 摘要 PDF 下載連結有效時間 */
+  downloadTtlMs: 10 * 60 * 1000,
+} as const;
+
 export const RATE_LIMITS = {
   perUserPerMinute: 30,
   /** 存證廊讀照片、縮圖（時間軸一次會載入多張）另外計算 */
@@ -92,6 +105,7 @@ export const RATE_LIMITS = {
   pushPerUserPerDay: 3,
   evidencePerUserPerDay: 200,
   evidenceExportPerUserPerDay: 20,
+  caseExportPerUserPerDay: 20,
   /** 全系統每日 F5 問答上限（每題約 3–4 次 Gemini 呼叫），防止費用失控 */
   qaGlobalPerDay: 1000,
 } as const;

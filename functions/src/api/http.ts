@@ -8,6 +8,8 @@ import type { LeaseCheckRepo } from "../lease/repo.js";
 import type { AuthUser } from "./auth.js";
 import type { DownloadTokenRepo, EvidenceRepo } from "../evidence/repo.js";
 import type { BlobStore } from "../evidence/store.js";
+import type { CaseRepo } from "../cases/repo.js";
+import type { QaLog } from "../ai/qaLog.js";
 
 export interface ApiRequest {
   method: string;
@@ -34,6 +36,8 @@ export interface ApiDeps {
   lease?: { llm: Llm; repo: LeaseCheckRepo };
   /** 存證廊；沒設定時回 503 */
   evidence?: { repo: EvidenceRepo; store: BlobStore; tokens: DownloadTokenRepo; now?: () => Date };
+  /** 急救包與案件摘要；qa 用來讀問答紀錄（摘要的條文與時間軸） */
+  cases?: { repo: CaseRepo; tokens: DownloadTokenRepo; qa?: QaLog; now?: () => Date };
   log?: (msg: string, data?: unknown) => void;
 }
 
