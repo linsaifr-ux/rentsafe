@@ -3,6 +3,7 @@ import { onRequest } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
+import { getStorage } from "firebase-admin/storage";
 import { MODELS, REGION } from "./config.js";
 import { geminiEmbedder } from "./ai/embed.js";
 import { geminiLlm } from "./ai/llm.js";
@@ -25,6 +26,9 @@ import {
 import { firestoreUserRepo } from "./users.js";
 import { firestoreViewingRepo } from "./viewing/repo.js";
 import { firestoreLeaseCheckRepo } from "./lease/repo.js";
+import { firestoreDownloadTokenRepo, firestoreEvidenceRepo } from "./evidence/repo.js";
+import { saveFromLine, setCategoryFromLine } from "./evidence/save.js";
+import { firebaseBlobStore } from "./evidence/store.js";
 
 initializeApp();
 setGlobalOptions({ region: REGION, maxInstances: 10 });
@@ -43,9 +47,17 @@ export const api = onRequest({ cors: false, secrets: [GEMINI_API_KEY], timeoutSe
         kb: firestoreKbIndex(db),
         viewings: firestoreViewingRepo(db),
         lease: { llm: geminiLlm(GEMINI_API_KEY.value(), MODELS.vision), repo: firestoreLeaseCheckRepo(db) },
+        evidence: { repo: firestoreEvidenceRepo(db), store: firebaseBlobStore(getStorage().bucket()), tokens: firestoreDownloadTokenRepo(db) },
         log: (msg, data) => logger.error(msg, data),
       },
     );
+    if (out.raw) {
+      res.set("Cache-Control", "private, no-store");
+      res.set("X-Content-Type-Options", "nosniff");
+      if (out.raw.filename) res.set("Content-Disposition", `attachment; filename="${out.raw.filename}"`);
+      res.status(out.status).type(out.raw.contentType).send(out.raw.data);
+      return;
+    }
     res.status(out.status).json(out.body);
   } catch (err) {
     logger.error("api error", { path: req.path, err: String(err) });
@@ -72,6 +84,15 @@ export const lineWebhook = onRequest(
         users: firestoreUserRepo(db),
         liffId,
         log: (msg, data) => logger.error(msg, data),
+        saveEvidence: (input) =>
+          saveFromLine(input, {
+            repo: firestoreEvidenceRepo(db),
+            store: firebaseBlobStore(getStorage().bucket()),
+            line: createLineClient(LINE_CHANNEL_ACCESS_TOKEN.value()),
+            limiter,
+            liffId,
+          }),
+        setEvidenceCategory: (input) => setCategoryFromLine(input, { repo: firestoreEvidenceRepo(db) }),
         answerQuestion: async (input) => {
           const { result } = await answerQuestion(input, {
             llm: geminiLlm(GEMINI_API_KEY.value()),

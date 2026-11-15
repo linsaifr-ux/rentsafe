@@ -331,6 +331,27 @@ export function ScoreRing({ score, size = 168, stroke = 12, testId, small = fals
   );
 }
 
+/* ───────────── 底部面板 ───────────── */
+
+/** 從底部滑出的面板（表單、提醒用） */
+export function Sheet({ title, onClose, busy = false, children }: { title: string; onClose: () => void; busy?: boolean; children: ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-50 flex animate-fade items-end justify-center bg-slate-900/40 backdrop-blur-[2px]" onClick={busy ? undefined : onClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className="max-h-[92dvh] w-full max-w-md animate-sheet overflow-y-auto rounded-t-[28px] bg-white px-5 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mx-auto h-1.5 w-10 rounded-full bg-slate-200" aria-hidden="true" />
+        <p className="mt-4 text-center text-lg font-bold text-slate-900">{title}</p>
+        <div className="mt-4">{children}</div>
+      </div>
+    </div>
+  );
+}
+
 /* ───────────── 確認面板 ───────────── */
 
 /** 從底部滑出的確認面板（刪除等不可復原的動作用） */

@@ -15,6 +15,8 @@ export interface WebhookDeps {
   answerQuestion?: (args: { uid: string; text: string; user: UserDoc }) => Promise<LineMessage[]>;
   /** F3 存證（Phase 6 接上） */
   saveEvidence?: (args: { uid: string; event: Extract<LineEvent, { type: "message" }> }) => Promise<LineMessage[]>;
+  /** 存證卡片的「改分類」 */
+  setEvidenceCategory?: (args: { uid: string; id: string; category: string }) => Promise<LineMessage[]>;
   log?: (msg: string, data?: unknown) => void;
 }
 
@@ -47,6 +49,7 @@ export async function handleEvent(ev: LineEvent, deps: WebhookDeps): Promise<Lin
         return [citySetMessage(city)];
       }
       if (pb.action === "askLaw") return [ASK_LAW_GUIDE];
+      if (pb.action === "evCat") return deps.setEvidenceCategory ? deps.setEvidenceCategory({ uid, id: pb.id, category: pb.category }) : [EVIDENCE_NOT_READY];
       return [];
     }
     case "message": {
@@ -61,7 +64,7 @@ export async function handleEvent(ev: LineEvent, deps: WebhookDeps): Promise<Lin
         const user = await deps.users.ensure(uid, {});
         return deps.answerQuestion({ uid, text: message.text, user });
       }
-      return [textMessage("目前只看得懂文字、圖片和檔案喔！")];
+      return [textMessage("目前只看得懂文字、圖片、影片、錄音和檔案喔！")];
     }
   }
 }

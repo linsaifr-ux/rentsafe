@@ -140,13 +140,19 @@ users/{uid}
   consentAt: Timestamp | null    # 同意隱私權政策的時間
 
 users/{uid}/evidence/{id}        # F3 存證廊
-  type: "photo" | "chat" | "note" | "document"
+  type: "photo" | "video" | "audio" | "document" | "note"
   category: "repair" | "rent" | "dispute" | "safety" | "other"
-  text: string                   # 使用者描述或 OCR 摘要（已遮蔽個資）
-  storagePath: string | null     # Cloud Storage 路徑
-  occurredAt: Timestamp          # 事件發生時間（預設＝收到時間，可修改）
+  text: string                   # 使用者描述（已遮蔽個資）；文字紀錄的內容也放這裡，存證後不可改
+  fileName, mimeType, bytes
+  storagePath: string | null     # Cloud Storage 路徑 users/{uid}/evidence/{id}；文字紀錄為 null
+  thumbPath: string | null       # 縮圖 users/{uid}/evidence/{id}_thumb.jpg（LINE 預覽圖或前端產生）
+  source: "line" | "liff"
+  occurredAt: Timestamp          # 事件發生時間（預設＝傳送時間或檔案時間，可修改）
   createdAt: Timestamp           # 系統收到時間（不可改，作為證據時間戳）
-  sha256: string | null          # 檔案雜湊，證明未被修改
+  sha256: string                 # 原檔（文字紀錄則為存下的文字）的雜湊，證明未被修改
+
+evidenceExports/{token}          # 證據清單 PDF 下載連結（只有後端可讀寫）
+  uid, ids: string[], expiresAt  # 10 分鐘有效；PDF 在下載時才產生，不另存
 
 users/{uid}/viewings/{id}        # F1 結果
   label: string                  # 使用者填的租屋處名稱或地址（選填，未填自動命名「縣市＋房型＋日期」）
@@ -202,7 +208,8 @@ kb_chunks/{id}                   # 知識庫（只有後端可讀寫）
 
 - 前端 `liff.getIDToken()` → 每個請求帶 `Authorization: Bearer <idToken>`。
 - 後端 `api/auth.ts` 呼叫 LINE 的 verify endpoint 驗證 ID token，取得 `sub` 作為 uid。**不相信前端傳的 userId。**
-- 所有 endpoint 都要限流：每位使用者每分鐘 10 次、每天 F5 問答 50 次、F2 租約健檢 10 次。
+- 所有 endpoint 都要限流：每位使用者每分鐘 30 次（存證廊讀照片、縮圖另計，每分鐘 120 次），超過回 429 `rate_limited`，畫面顯示「等一分鐘再試」；每天 F5 問答 50 次、F2 租約健檢 10 次、F3 存證 200 筆、證據清單匯出 20 次，超過回 429 `daily_limit`，畫面顯示「明天再試」。
+- 例外：證據清單 PDF 的下載連結（`GET /api/evidence/download/{token}`）在外部瀏覽器開啟，沒有 LIFF 登入，改用 10 分鐘有效的隨機 token 驗證。
 
 ---
 
@@ -364,10 +371,12 @@ LIFF 拍照或選 1–6 張租約照片（或 1 個 PDF），手機端先壓縮
 
 ## 9. F3 存證廊（Phase 6）
 
-- 聊天室收到圖片／檔案／以「#存證」開頭的文字 → 存一筆 evidence，計算 sha256，回覆時間戳卡片。
-- LIFF 時間軸：依 occurredAt 排序，可篩分類、加描述、改發生時間（createdAt 不可改，兩者都顯示）。
-- 匯出：產生「證據清單」PDF（時間、類型、描述、雜湊值、縮圖），匯出前顯示個資與誹謗風險提醒。
-- 不提供刪除單筆以外的修改原檔功能（保持證據完整）。
+- 聊天室收到圖片／影片／錄音／檔案（上限 20MB）或以「#存證」開頭的文字 → 存一筆 evidence，計算 sha256，回覆時間戳卡片（類型、分類、收到時間、SHA-256），附「改分類」Quick Reply 與「打開存證廊」按鈕。影片、錄音還在 LINE 轉檔時稍等重試，仍未好就請使用者再傳一次。
+- LIFF 也可以拍照、選檔（原檔不壓縮，上限 10MB）或寫文字紀錄；圖片另外產生縮圖。
+- LIFF 時間軸：依 occurredAt 排序、依日期分組，可篩分類、加描述、改分類、改發生時間（createdAt 不可改，兩者都顯示）；單筆頁顯示原檔、完整雜湊值（可複製）。
+- 匯出：產生「證據清單」PDF（時間、類型、描述、雜湊值、縮圖；字型 Noto Sans TC，SIL OFL），一次最多最新 60 筆，可依分類匯出。匯出前顯示個資與誹謗風險提醒；PDF 內也印同樣提醒與免責聲明。下載連結 10 分鐘有效，用外部瀏覽器開啟。
+- 不提供修改原檔的功能（保持證據完整）；文字紀錄的內容存證後也不能改。只能刪除整筆（連同 Storage 檔案）。
+- 照片、檔案只經後端讀取（Storage 規則全部拒絕）；讀檔另計限流，見 4.2。
 
 ---
 
@@ -484,3 +493,9 @@ LIFF 拍照或選 1–6 張租約照片（或 1 個 PDF），手機端先壓縮
 - 2026-11-12｜Phase 4 追加｜看房健檢加「租屋處名稱或地址」（選填，不用定位）、「我的看房紀錄」、2–3 間並排比較；已部署，**待手機實機確認**｜`GET /api/viewing/history`、`POST /api/viewing/detail`（只能讀自己的紀錄）、`web/src/pages/ViewingHistory.tsx`；隱私政策草稿補上蒐集項目
 - 2026-11-12｜Phase 5｜程式完成並部署；**驗收範例通過**：`demo/sample-lease.pdf` 以真實 Gemini 測得押金、公共電費、稅負三個紅燈＋電費單價黃燈，無誤報，耗時 23 秒；遮蔽測試全過（實測 8 項個資皆遮蔽）｜依 2026-11-12 決定：原圖只在記憶體處理不落地；電費規則改依內政部 113 年修正（當期每度平均電價、不得另收公共電費）。官方依據逐字存 `kb/contract-standard/GL000907.md`（114-04-18 修正），規則引文由測試比對。**待手機實機拍照確認**
 - 2026-11-13｜Phase 4／5 追加｜租屋處：租約健檢可指定屬於哪一間看房紀錄；看房紀錄顯示租約紅黃燈標籤、單筆頁的租約區塊（或「幫這間做租約健檢」）、「只有租約」清單；比較加月租金、押金月數、租約紅燈；刪一間時連同租約一起刪；已部署，**待手機實機確認**｜`/api/lease/detail`、`/api/lease/delete`；leaseChecks 新增 viewingId、label、passed
+- 2026-11-14｜Phase 4、5｜**已驗收**：手機實機確認看房健檢（紀錄、比較、刪除）、租約健檢（上傳、結果、複製話術）與租屋處連結皆正常
+- 2026-11-14｜介面｜全面改成手機 App 風格：lucide 圖示取代表情符號、CSS 動畫（尊重「減少動態效果」）、圖文選單重繪；使用者確認｜Firebase Storage 已在 Console 開通，可進 Phase 6
+- 2026-11-14｜Phase 6｜程式完成並部署（functions、Firestore 索引、Storage 規則、Hosting），自動測試通過（後端 217、前端 33），**待手機實機驗收**：傳圖 3 秒內收到時間戳卡、PDF 含雜湊值｜聊天室收件＋改分類、LIFF 時間軸／上傳／文字紀錄／編輯／刪除、證據清單 PDF（pdfkit＋Noto Sans TC）；歡迎卡與問答卡的表情符號改成文字與色塊。看房健檢拍照存證（SPEC 7）尚未接上
+- 2026-11-15｜修正｜問法條在需要轉介時整則回覆被 LINE 拒收（carousel 內 bubble 大小不一致：回答 giga、轉介 kilo），改成一致並加測試；回答卡、緊急卡、歡迎卡、存證卡都已用 LINE validate API 驗證格式。已部署 lineWebhook
+- 2026-11-15｜修正｜每分鐘限流 10 → 30 次；每日上限改回 429 `daily_limit`，畫面顯示「明天再試」，與每分鐘限流區分（SPEC 4.2 同步）。證據清單 PDF 頁尾觸發自動換頁多出 2 頁空白，修正並加頁數測試。已部署
+- 2026-11-15｜Phase 6｜**已驗收**：手機實機確認聊天室傳圖收到已存證卡、改分類、`#存證` 文字紀錄、存證廊時間軸與編輯、證據清單 PDF（縮圖、SHA-256、無空白頁）皆正常。看房健檢拍照存證（SPEC 7）尚未接上

@@ -140,9 +140,11 @@ describe("handleApi", () => {
     expect((me.body as { consentAt: string }).consentAt).toBe("2026-11-12T00:00:00.000Z");
   });
 
-  it("每位使用者每分鐘超過 10 次回 429", async () => {
+  it("每位使用者每分鐘超過 30 次回 429 rate_limited", async () => {
     const { call } = setup();
-    for (let i = 0; i < 10; i++) expect((await call("GET", "/api/me")).status).toBe(200);
-    expect((await call("GET", "/api/me")).status).toBe(429);
+    for (let i = 0; i < 30; i++) expect((await call("GET", "/api/me")).status).toBe(200);
+    const res = await call("GET", "/api/me");
+    expect(res.status).toBe(429);
+    expect(res.body).toEqual({ error: "rate_limited" });
   });
 });

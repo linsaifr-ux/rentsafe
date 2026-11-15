@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import App from "./App.tsx";
-import { ApiError, apiFetch, type Me } from "./api.ts";
+import { ApiError, apiFetch, errorMessage, type Me } from "./api.ts";
 import { DISCLAIMER_TEXT } from "./components/Disclaimer.tsx";
 import { resolvePath } from "./router.tsx";
 
@@ -20,6 +20,11 @@ describe("App", () => {
   it("載入失敗顯示錯誤訊息", async () => {
     render(<App load={async () => Promise.reject(new ApiError(429, "rate_limited"))} path="/" />);
     expect(await screen.findByText("操作太頻繁了，請等一分鐘再試。")).toBeTruthy();
+  });
+
+  it("每日上限用完顯示明天再試，與每分鐘限流區分", () => {
+    expect(errorMessage(new ApiError(429, "daily_limit"))).toBe("今天的使用次數已經用完了，明天再試。");
+    expect(errorMessage(new ApiError(429, "rate_limited"))).toBe("操作太頻繁了，請等一分鐘再試。");
   });
 
   it("設定頁顯示目前縣市", async () => {

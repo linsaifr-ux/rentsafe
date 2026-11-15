@@ -2,6 +2,8 @@
 export type PostbackAction =
   | { action: "setCity"; city: string | null }
   | { action: "askLaw" }
+  /** 存證卡片的「改分類」 */
+  | { action: "evCat"; id: string; category: string }
   | { action: "unknown" };
 
 export function encodePostback(data: Record<string, string>): string {
@@ -17,6 +19,11 @@ export function parsePostback(data: string): PostbackAction {
     }
     case "askLaw":
       return { action: "askLaw" };
+    case "evCat": {
+      const id = p.get("id");
+      const category = p.get("cat");
+      return id && category ? { action: "evCat", id, category } : { action: "unknown" };
+    }
     default:
       return { action: "unknown" };
   }

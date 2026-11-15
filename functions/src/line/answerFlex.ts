@@ -39,10 +39,13 @@ function citationBox(c: Extract<QaResult, { kind: "answer" }>["citations"][numbe
   };
 }
 
+/** LINE 規定 carousel 裡每個 bubble 的 size 必須相同，否則整則訊息會被拒收 */
+const BUBBLE_SIZE = "giga";
+
 function referralBubble(referrals: Referral[]) {
   return {
     type: "bubble",
-    size: "kilo",
+    size: BUBBLE_SIZE,
     header: {
       type: "box",
       layout: "vertical",
@@ -110,7 +113,7 @@ export function answerMessages(result: QaResult, liffId: string): LineMessage[] 
       return [textMessage(result.question, result.askCity)];
     case "answer": {
       const body: unknown[] = [heading("結論"), para(result.summary, { margin: "sm" })];
-      if (result.note) body.push(para(`⚠️ ${result.note}`, { size: "xs", color: "#B45309", margin: "md" }));
+      if (result.note) body.push(para(`注意：${result.note}`, { size: "xs", color: "#B45309", margin: "md" }));
       if (result.citations.length) body.push(heading("依據條文"), ...result.citations.slice(0, 4).map(citationBox));
       if (result.actions.length) body.push(heading("你可以做的事"), ...bullets(result.actions));
       if (result.evidence.length) body.push(heading("建議保留的證據"), ...bullets(result.evidence));
@@ -118,7 +121,7 @@ export function answerMessages(result: QaResult, liffId: string): LineMessage[] 
 
       const answerBubble = {
         type: "bubble",
-        size: "giga",
+        size: BUBBLE_SIZE,
         body: { type: "box", layout: "vertical", contents: body },
       };
       const contents = result.referrals.length

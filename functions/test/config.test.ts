@@ -14,10 +14,13 @@ describe("config", () => {
 
   it("限流數字符合 SPEC 4.2", () => {
     expect(RATE_LIMITS).toEqual({
-      perUserPerMinute: 10,
+      perUserPerMinute: 30,
+      filePerUserPerMinute: 120,
       qaPerUserPerDay: 50,
       leaseCheckPerUserPerDay: 10,
       pushPerUserPerDay: 3,
+      evidencePerUserPerDay: 200,
+      evidenceExportPerUserPerDay: 20,
       qaGlobalPerDay: 1000,
     });
   });

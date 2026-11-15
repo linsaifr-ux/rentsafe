@@ -20,7 +20,7 @@ export interface PreparedFile {
   previewUrl: string | null;
 }
 
-function readAsBase64(blob: Blob): Promise<string> {
+export function readAsBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const r = new FileReader();
     r.onload = () => resolve(String(r.result).replace(/^data:[^,]*,/, ""));

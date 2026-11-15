@@ -69,7 +69,7 @@ export const leaseRoutes: Routes = {
       label = v.label;
     }
     if (!(await deps.limiter.hit(`lease/${user.uid}`, RATE_LIMITS.leaseCheckPerUserPerDay, DAY))) {
-      throw new HttpError(429, "rate_limited");
+      throw new HttpError(429, "daily_limit");
     }
 
     const started = Date.now();

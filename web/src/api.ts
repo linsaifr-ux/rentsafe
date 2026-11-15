@@ -122,6 +122,38 @@ export type LeaseResult =
       passed: Array<{ ruleId: string; title: string }>;
     };
 
+/** F3 存證廊（對應 functions/src/api/evidence.ts） */
+export type EvidenceCategory = "repair" | "rent" | "dispute" | "safety" | "other";
+export type EvidenceType = "photo" | "video" | "audio" | "document" | "note";
+
+export interface EvidenceItem {
+  id: string;
+  type: EvidenceType;
+  category: EvidenceCategory;
+  text: string;
+  fileName: string | null;
+  mimeType: string | null;
+  bytes: number;
+  hasFile: boolean;
+  hasThumb: boolean;
+  sha256: string;
+  source: "line" | "liff";
+  /** 事件發生時間（可改） */
+  occurredAt: string;
+  /** 系統收到時間（不可改） */
+  createdAt: string;
+}
+
+export interface EvidenceUpload {
+  mimeType: string;
+  data: string;
+  thumb?: string;
+  fileName?: string;
+  text?: string;
+  category?: EvidenceCategory;
+  occurredAt?: string;
+}
+
 type TokenGetter = () => string | null;
 
 /** 呼叫後端，一律帶 Authorization: Bearer <LIFF ID token> */
@@ -148,6 +180,19 @@ export async function apiFetch<T>(
   return (await res.json()) as T;
 }
 
+/** 讀檔案（照片、影片、PDF）回傳 Blob */
+export async function apiBlob(path: string, body: unknown, deps: { getToken?: TokenGetter; fetchImpl?: typeof fetch } = {}): Promise<Blob> {
+  const token = (deps.getToken ?? getIdToken)();
+  if (!token) throw new ApiError(401, "no_token");
+  const res = await (deps.fetchImpl ?? fetch)(`/api${path}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new ApiError(res.status, "file_error");
+  return res.blob();
+}
+
 export const api = {
   me: () => apiFetch<Me>("/me"),
   setCity: (city: string | null) => apiFetch<{ city: string | null }>("/me/city", { method: "POST", body: { city } }),
@@ -163,12 +208,23 @@ export const api = {
     apiFetch<{ viewings: ViewingSummary[]; leaseOnly: Array<LeaseSummary & { label: string }> }>("/viewing/history"),
   deleteViewing: (id: string) => apiFetch<{ ok: true }>("/viewing/delete", { method: "POST", body: { id } }),
   viewingDetail: (ids: string[]) => apiFetch<{ viewings: ViewingResult[] }>("/viewing/detail", { method: "POST", body: { ids } }),
+  evidenceList: () => apiFetch<{ items: EvidenceItem[] }>("/evidence/list", { method: "POST", body: {} }),
+  evidenceUpload: (body: EvidenceUpload) => apiFetch<{ item: EvidenceItem }>("/evidence/upload", { method: "POST", body }),
+  evidenceNote: (body: { text: string; category?: EvidenceCategory; occurredAt?: string }) =>
+    apiFetch<{ item: EvidenceItem }>("/evidence/note", { method: "POST", body }),
+  evidenceUpdate: (body: { id: string; text?: string; category?: EvidenceCategory; occurredAt?: string }) =>
+    apiFetch<{ item: EvidenceItem }>("/evidence/update", { method: "POST", body }),
+  evidenceDelete: (id: string) => apiFetch<{ ok: true }>("/evidence/delete", { method: "POST", body: { id } }),
+  evidenceFile: (id: string, thumb = false) => apiBlob("/evidence/file", { id, thumb }),
+  evidenceExport: (category: EvidenceCategory | null) =>
+    apiFetch<{ url: string; count: number; truncated: boolean }>("/evidence/export", { method: "POST", body: { category } }),
 };
 
 /** 給使用者看的錯誤訊息 */
 export function errorMessage(err: unknown): string {
   if (err instanceof ApiError) {
     if (err.status === 401) return "登入逾時，正在重新登入…";
+    if (err.status === 429 && err.code === "daily_limit") return "今天的使用次數已經用完了，明天再試。";
     if (err.status === 429) return "操作太頻繁了，請等一分鐘再試。";
     if (err.status === 404) return "找不到這筆紀錄。";
     if (err.status === 413) return "檔案太大了，請少選幾張或改用照片。";

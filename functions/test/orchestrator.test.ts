@@ -172,7 +172,10 @@ describe("answerMessages", () => {
     expect(s).toContain("民法 第 429 條");
     expect(s).toContain("https://law.moj.gov.tw/x");
     expect(s).toContain("本服務提供法律資訊，不是法律意見");
-    expect((msgs[0]!.contents as { type: string }).type).toBe("carousel");
+    const carousel = msgs[0]!.contents as { type: string; contents: Array<{ size?: string }> };
+    expect(carousel.type).toBe("carousel");
+    // LINE 不接受 carousel 裡混用不同 bubble size（2026-11-14 實際發生：整則回覆被拒收）
+    expect(new Set(carousel.contents.map((b) => b.size)).size).toBe(1);
   });
 
   it("緊急卡片有 119／110 按鈕與急救包連結", () => {

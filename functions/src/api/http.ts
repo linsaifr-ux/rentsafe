@@ -6,6 +6,8 @@ import type { ViewingRepo } from "../viewing/repo.js";
 import type { Llm } from "../ai/llm.js";
 import type { LeaseCheckRepo } from "../lease/repo.js";
 import type { AuthUser } from "./auth.js";
+import type { DownloadTokenRepo, EvidenceRepo } from "../evidence/repo.js";
+import type { BlobStore } from "../evidence/store.js";
 
 export interface ApiRequest {
   method: string;
@@ -17,6 +19,8 @@ export interface ApiRequest {
 export interface ApiResponse {
   status: number;
   body: unknown;
+  /** 檔案回應（照片、PDF）；有值時不送 JSON */
+  raw?: { contentType: string; data: Buffer; filename?: string };
 }
 
 export interface ApiDeps {
@@ -28,6 +32,8 @@ export interface ApiDeps {
   viewings: ViewingRepo;
   /** 租約健檢；沒設定時 /lease/check 回 503 */
   lease?: { llm: Llm; repo: LeaseCheckRepo };
+  /** 存證廊；沒設定時回 503 */
+  evidence?: { repo: EvidenceRepo; store: BlobStore; tokens: DownloadTokenRepo; now?: () => Date };
   log?: (msg: string, data?: unknown) => void;
 }
 

@@ -35,3 +35,9 @@ export function isInLineClient(): boolean {
 export function closeWindow(): void {
   if (liff.isInClient()) liff.closeWindow();
 }
+
+/** 用外部瀏覽器開網址（LINE 內建瀏覽器常無法下載檔案） */
+export function openExternal(url: string): void {
+  if (liff.isInClient()) liff.openWindow({ url, external: true });
+  else window.open(url, "_blank", "noopener");
+}

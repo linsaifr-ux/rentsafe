@@ -22,19 +22,29 @@ export function cityQuickReply() {
   };
 }
 
-function stageRow(emoji: string, title: string, desc: string) {
+function stageRow(step: string, color: string, title: string, desc: string) {
   return {
     type: "box",
     layout: "horizontal",
     spacing: "md",
     contents: [
-      { type: "text", text: emoji, flex: 0, size: "lg" },
+      {
+        type: "box",
+        layout: "vertical",
+        width: "28px",
+        height: "28px",
+        cornerRadius: "14px",
+        backgroundColor: color,
+        justifyContent: "center",
+        flex: 0,
+        contents: [{ type: "text", text: step, color: "#FFFFFF", size: "xs", weight: "bold", align: "center" }],
+      },
       {
         type: "box",
         layout: "vertical",
         contents: [
-          { type: "text", text: title, weight: "bold", size: "sm", color: "#111827" },
-          { type: "text", text: desc, size: "xs", color: "#6B7280", wrap: true },
+          { type: "text", text: title, weight: "bold", size: "sm", color: "#0F172A" },
+          { type: "text", text: desc, size: "xs", color: "#64748B", wrap: true },
         ],
       },
     ],
@@ -63,9 +73,9 @@ export function welcomeMessage(liffId: string, displayName?: string): LineMessag
         layout: "vertical",
         spacing: "lg",
         contents: [
-          stageRow("🔍", "簽約前", "看房健檢、拍照做租約健檢，先找出地雷"),
-          stageRow("📸", "住進去", "照片、對話傳給我就自動存證，附時間戳"),
-          stageRow("🆘", "出事時", "情境急救包一步步帶你處理，需要時幫你轉介"),
+          stageRow("1", "#059669", "簽約前", "看房健檢、拍照做租約健檢，先找出地雷"),
+          stageRow("2", "#0284C7", "住進去", "照片、對話傳給我就自動存證，附時間戳"),
+          stageRow("3", "#E11D48", "出事時", "情境急救包一步步帶你處理，需要時幫你轉介"),
           { type: "separator" },
           { type: "text", text: "直接打字就能問租屋法律問題，回答都會附上條文出處。", size: "xs", wrap: true, color: "#374151" },
           { type: "text", text: DISCLAIMER, size: "xxs", wrap: true, color: "#9CA3AF" },

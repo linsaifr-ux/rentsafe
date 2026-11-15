@@ -62,11 +62,36 @@ export const LEASE = {
   maxClauses: 80,
 } as const;
 
+/** 存證廊（SPEC 9） */
+export const EVIDENCE = {
+  /** 聊天室收到的檔案上限（LINE 允許更大，超過就請使用者自行保留原檔） */
+  maxFileBytes: 20 * 1024 * 1024,
+  /** LIFF 上傳的原檔上限（base64 後約 1.34 倍，仍在 Hosting 請求上限內） */
+  maxUploadBytes: 10 * 1024 * 1024,
+  /** 縮圖上限（前端或 LINE 預覽圖） */
+  maxThumbBytes: 400 * 1024,
+  /** 描述最多幾個字 */
+  textMaxLength: 500,
+  /** 時間軸最多列幾筆 */
+  listLimit: 300,
+  /** 一份證據清單 PDF 最多幾筆 */
+  exportMax: 60,
+  /** 匯出下載連結有效時間 */
+  downloadTtlMs: 10 * 60 * 1000,
+  /** LINE 影片、錄音轉檔還沒完成時，最多等幾次、每次間隔 */
+  contentRetries: 4,
+  contentRetryMs: 700,
+} as const;
+
 export const RATE_LIMITS = {
-  perUserPerMinute: 10,
+  perUserPerMinute: 30,
+  /** 存證廊讀照片、縮圖（時間軸一次會載入多張）另外計算 */
+  filePerUserPerMinute: 120,
   qaPerUserPerDay: 50,
   leaseCheckPerUserPerDay: 10,
   pushPerUserPerDay: 3,
+  evidencePerUserPerDay: 200,
+  evidenceExportPerUserPerDay: 20,
   /** 全系統每日 F5 問答上限（每題約 3–4 次 Gemini 呼叫），防止費用失控 */
   qaGlobalPerDay: 1000,
 } as const;
